@@ -1,0 +1,70 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17', cache: gradle }
+      - run: ./gradlew --no-daemon :app:testDebugUnitTest :app:lintDebug
+
+  # A tag vX.Y.Z builds every program from source, signs the APKs and the AAB with the upload key
+  # and attaches them, with the native sources, to a draft release that is published by hand.
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17', cache: gradle }
+      - name: Version
+        run: |
+          version=${GITHUB_REF_NAME#v}
+          IFS=. read -r major minor patch <<< "${version%%-*}"
+          echo "REX_ANDROID_VERSION=$version" >> "$GITHUB_ENV"
+          # Play needs a code that only grows: 1.2.3 is 1002003.
+          echo "REX_ANDROID_VERSION_CODE=$((major * 1000000 + minor * 1000 + patch))" >> "$GITHUB_ENV"
+      - name: Toolchains
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y -q nasm
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "ndk;28.2.13676358" "build-tools;36.0.0" "platforms;android-36" > /dev/null
+          rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/rex-android-native
+          key: natives-${{ hashFiles('build-ffmpeg.py', 'build-natives.sh', 'rex.ref', 'rex-addons.ref') }}
+          restore-keys: natives-
+      - run: ./build-natives.sh
+      - run: python3 build-ffmpeg.py
+      - name: Build and sign
+        env:
+          KEYSTORE_BASE64: ${{ secrets.REX_ANDROID_KEYSTORE_BASE64 }}
+          REX_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.REX_ANDROID_KEYSTORE_PASSWORD }}
+          REX_ANDROID_KEY_PASSWORD: ${{ secrets.REX_ANDROID_KEY_PASSWORD }}
+        run: |
+          test -n "$KEYSTORE_BASE64" || { echo "The signing secrets are missing" >&2; exit 1; }
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+          export REX_ANDROID_KEYSTORE="$RUNNER_TEMP/upload.jks"
+          ./gradlew --no-daemon :app:lintRelease :app:assembleRelease :app:bundleRelease
+          ./verify-release.sh
+          rm "$RUNNER_TEMP/upload.jks"
+      - name: Draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1 ||
+            gh release create "$GITHUB_REF_NAME" --draft --title "rex for Android $REX_ANDROID_VERSION" --generate-notes
+          gh release upload "$GITHUB_REF_NAME" artifacts/* --clobber
