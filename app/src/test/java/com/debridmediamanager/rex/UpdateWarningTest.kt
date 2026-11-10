@@ -1,0 +1,41 @@
+package com.debridmediamanager.rex
+
+import org.junit.Assert.*
+import org.junit.Test
+
+/** When an update has to ask first, and what it says. */
+class UpdateWarningTest {
+    private val archive = listOf("archive.org", "*.archive.org")
+
+    @Test fun theSameSitesFromTheSameRepositoryNeedNoQuestion() {
+        assertNull(updateWarning(archive, archive.reversed(), "rex-addons", "rex-addons", "rex addons"))
+    }
+
+    @Test fun aNewSiteIsNamed() {
+        assertEquals("It comes from rex addons. It can reach archive.org, *.archive.org, cdn.example.org, " +
+            "new: cdn.example.org. Update only from people you trust.",
+            updateWarning(archive, archive + "cdn.example.org", "rex-addons", "rex-addons", "rex addons"))
+        assertEquals("It comes from rex addons. It can reach any website, new: any website. Update only from people you trust.",
+            updateWarning(archive, listOf("*"), "rex-addons", "rex-addons", "rex addons"))
+    }
+
+    @Test fun fewerSitesStillAsk() {
+        assertEquals("It comes from rex addons. It can reach archive.org. Update only from people you trust.",
+            updateWarning(archive, listOf("archive.org"), "rex-addons", "rex-addons", "rex addons"))
+    }
+
+    @Test fun anotherSourceAsksEvenWithTheSameSites() {
+        assertEquals("It now comes from Mine instead of rex-addons. It can reach archive.org, *.archive.org. " +
+            "Update only from people you trust.", updateWarning(archive, archive, "rex-addons", "mine", "Mine"))
+        // A repository taking over the copy built into the app.
+        assertEquals("It now comes from Mine instead of the copy built into the app. It can reach archive.org, *.archive.org. " +
+            "Update only from people you trust.", updateWarning(archive, archive, null, "mine", "Mine"))
+    }
+
+    @Test fun unknownSitesAsk() {
+        assertEquals("It comes from rex addons. It doesn't say which websites it can reach. Update only from people you trust.",
+            updateWarning(archive, null, "rex-addons", "rex-addons", "rex addons"))
+        assertEquals("It comes from rex addons. It can reach archive.org, *.archive.org. Update only from people you trust.",
+            updateWarning(null, archive, "rex-addons", "rex-addons", "rex addons"))
+    }
+}

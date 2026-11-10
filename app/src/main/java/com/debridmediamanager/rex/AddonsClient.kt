@@ -34,6 +34,8 @@ object AddonsToken {
     val enabled: Boolean = true, val state: String = "idle", val items: Long = 0, val held: Long = 0,
     @SerialName("last_sync") val lastSync: Long? = null, val error: String? = null,
     val repo: String? = null, @SerialName("update_available") val updateAvailable: Boolean = false,
+    /** The websites the installed copy can reach, and those the offered update could. */
+    val hosts: List<String> = emptyList(), @SerialName("update_hosts") val updateHosts: List<String>? = null,
 )
 /** A git repository addons are installed from. */
 @Serializable data class Repo(
@@ -48,6 +50,9 @@ object AddonsToken {
     val id: String, val name: String = id, val version: String = "", val description: String = "",
     val hosts: List<String> = emptyList(), @SerialName("installed_version") val installedVersion: String? = null,
     @SerialName("update_available") val updateAvailable: Boolean = false,
+    @SerialName("installed_hosts") val installedHosts: List<String>? = null,
+    /** The repository the installed copy came from; null for the copy built into the app. */
+    @SerialName("installed_repo") val installedRepo: String? = null,
 )
 @Serializable data class ConfigField(
     val key: String, val label: String = key, val type: String = "text",

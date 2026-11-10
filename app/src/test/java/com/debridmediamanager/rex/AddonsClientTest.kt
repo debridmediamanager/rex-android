@@ -15,7 +15,8 @@ class AddonsClientTest {
 
     private fun fixture(name: String) = javaClass.getResource("/host/$name")!!.readText()
 
-    // Answered by rex-addons 1dd7a64 on a Pixel 6 after the bundled addon's first sync.
+    // Answered by rex-addons 1dd7a64 on a Pixel 6 after the bundled addon's first sync, with the
+    // fields host 0.2.0 adds (error_kind, hosts) written in by hand until a 0.2.0 host is recorded.
     @Test fun statusReadsTheRealHostsAnswer() {
         server.enqueue(MockResponse().setBody(fixture("status.json")))
         val status = client.status()
@@ -27,6 +28,8 @@ class AddonsClientTest {
         assertEquals(0L, addon.held)
         assertEquals(1794328362L, addon.lastSync)
         assertNull(addon.error)
+        assertEquals(listOf("archive.org", "*.archive.org"), addon.hosts)
+        assertNull(addon.updateHosts)
     }
 
     @Test fun statusKeepsWhatAFailingAddonSaysAndIgnoresNewFields() {
@@ -97,9 +100,10 @@ class AddonsClientTest {
         """.trimIndent()))
         server.enqueue(MockResponse().setBody("""
             [{"id":"internet-archive","name":"Internet Archive","version":"1.1.0","description":"Films",
-              "hosts":["archive.org","*.archive.org"],"installed_version":"1.0.0","update_available":true},
+              "hosts":["archive.org","*.archive.org","cdn.example.org"],"installed_version":"1.0.0","update_available":true,
+              "installed_hosts":["archive.org","*.archive.org"],"installed_repo":null,"compatible":true},
              {"id":"stremio","name":"Stremio","version":"1.0.0","description":"","hosts":["*"],
-              "installed_version":null,"update_available":false}]
+              "installed_version":null,"update_available":false,"installed_hosts":null,"installed_repo":null,"compatible":true}]
         """.trimIndent()))
         val repos = client.repos()
         assertEquals("/api/repos", server.takeRequest().path)
@@ -110,7 +114,10 @@ class AddonsClientTest {
         assertTrue(offered[0].updateAvailable)
         assertEquals("1.0.0", offered[0].installedVersion)
         assertNull(offered[1].installedVersion)
-        assertEquals("archive.org, *.archive.org", reach(offered[0].hosts))
+        assertEquals(listOf("archive.org", "*.archive.org"), offered[0].installedHosts)
+        assertNull(offered[0].installedRepo)
+        assertNull(offered[1].installedHosts)
+        assertEquals("archive.org, *.archive.org, cdn.example.org", reach(offered[0].hosts))
         assertEquals("any website", reach(offered[1].hosts))
     }
 
@@ -132,13 +139,15 @@ class AddonsClientTest {
         server.enqueue(MockResponse().setBody("""
             {"version":"0.2.0","rex":{"url":"http://127.0.0.1:32400","reachable":true},"addons":[
               {"id":"internet-archive","name":"Internet Archive","enabled":true,"state":"idle","items":100,"held":0,
-               "last_sync":1794328362,"error":null,"repo":"rex-addons","update_available":true},
+               "last_sync":1794328362,"error":null,"repo":"rex-addons","update_available":true,
+               "hosts":["archive.org"],"update_hosts":["archive.org","cdn.example.org"]},
               {"id":"bundled","name":"Bundled","enabled":true,"state":"idle","items":1,"held":0,"last_sync":null,
                "error":null,"repo":null,"update_available":false}]}
         """.trimIndent()))
         val (fromRepo, bundled) = client.status().addons
         assertEquals("rex-addons", fromRepo.repo)
         assertTrue(fromRepo.updateAvailable)
+        assertEquals(listOf("archive.org", "cdn.example.org"), fromRepo.updateHosts)
         assertNull(bundled.repo)
     }
 

@@ -1,5 +1,5 @@
 {
-    "version": "0.1.0",
+    "version": "0.2.0",
     "rex": {
         "url": "http://127.0.0.1:32500",
         "reachable": true
@@ -15,7 +15,14 @@
             "items": 100,
             "held": 0,
             "last_sync": 1794328362,
-            "error": null
+            "error": null,
+            "repo": null,
+            "update_available": false,
+            "error_kind": null,
+            "hosts": [
+                "archive.org",
+                "*.archive.org"
+            ]
         }
     ]
 }

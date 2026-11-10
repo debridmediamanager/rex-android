@@ -31,12 +31,40 @@ fun reach(hosts: List<String>): String = when {
     else -> hosts.joinToString(", ")
 }
 
+/**
+ * What to tell the person before an update that can reach other websites than the installed copy,
+ * or comes from another repository (also a repository taking over the copy built into the app).
+ * Null when it changes neither: then it stays one tap.
+ */
+fun updateWarning(installedHosts: List<String>?, offeredHosts: List<String>?, installedRepo: String?, repo: String, repoName: String): String? {
+    val sameSites = installedHosts != null && offeredHosts != null && installedHosts.toSet() == offeredHosts.toSet()
+    if (sameSites && installedRepo == repo) return null
+    val from = if (installedRepo == repo) "It comes from $repoName."
+        else "It now comes from $repoName instead of ${installedRepo ?: "the copy built into the app"}."
+    val added = offeredHosts.orEmpty() - installedHosts.orEmpty().toSet()
+    val sites = when {
+        offeredHosts == null -> "It doesn't say which websites it can reach."
+        installedHosts == null || added.isEmpty() -> "It can reach ${reach(offeredHosts)}."
+        else -> "It can reach ${reach(offeredHosts)}, new: ${reach(added)}."
+    }
+    return "$from $sites Update only from people you trust."
+}
+
+/** An update waiting for a yes, and why it asks. */
+private class PendingUpdate(val name: String, val warning: String, val update: () -> Unit)
+
+@Composable private fun ConfirmUpdate(pending: PendingUpdate, dismiss: () -> Unit) =
+    AlertDialog(onDismissRequest = dismiss, title = { Text("Update ${pending.name}?") }, text = { Text(pending.warning) },
+        confirmButton = { Action("Update", primary = true) { dismiss(); pending.update() } },
+        dismissButton = { Action("Cancel") { dismiss() } })
+
 @Composable fun AddonsScreen(work: Work, busy: Boolean) {
     val addons by Status.addons.collectAsStateWithLifecycle()
     var editing by remember { mutableStateOf<String?>(null) }
     var browsing by remember { mutableStateOf<Repo?>(null) }
     var removing by remember { mutableStateOf<Addon?>(null) }
     var dropping by remember { mutableStateOf<Repo?>(null) }
+    var asking by remember { mutableStateOf<PendingUpdate?>(null) }
     var repos by remember { mutableStateOf<List<Repo>>(emptyList()) }
     var link by remember { mutableStateOf("") }
     val host = addons.host
@@ -65,7 +93,10 @@ fun reach(hosts: List<String>): String = when {
                     Buttons {
                         val repo = addon.repo
                         if (addon.updateAvailable && repo != null) Action("Update", !busy, primary = true) {
-                            work.addonCall("${addon.name} updated.") { client.install(repo, addon.id) }
+                            val update = { work.addonCall("${addon.name} updated.") { client.install(repo, addon.id) } }
+                            val repoName = repos.firstOrNull { it.id == repo }?.name?.ifBlank { null } ?: repo
+                            val warning = updateWarning(addon.hosts, addon.updateHosts, repo, repo, repoName)
+                            if (warning == null) update() else asking = PendingUpdate(addon.name, warning, update)
                         }
                         // After a failed sync the error says why; syncing anyway also lets it remove
                         // more than half of its titles, which rex refuses otherwise.
@@ -119,6 +150,7 @@ fun reach(hosts: List<String>): String = when {
             confirmButton = { Action("Remove", primary = true) { removing = null; work.addonCall("${addon.name} removed.") { client.remove(addon.id) } } },
             dismissButton = { Action("Cancel") { removing = null } })
     }
+    asking?.let { ConfirmUpdate(it) { asking = null } }
     dropping?.let { repo ->
         val name = repo.name.ifBlank { repo.id }
         AlertDialog(onDismissRequest = { dropping = null }, title = { Text("Remove $name?") },
@@ -134,6 +166,7 @@ fun reach(hosts: List<String>): String = when {
     var offered by remember { mutableStateOf<List<RepoAddon>?>(null) }
     var problem by remember { mutableStateOf("") }
     var confirming by remember { mutableStateOf<RepoAddon?>(null) }
+    var asking by remember { mutableStateOf<PendingUpdate?>(null) }
     val load = { runCatching { client.repoAddons(repo.id) }.onSuccess { offered = it }.onFailure { problem = it.message ?: "Can't list its addons." } }
     LaunchedEffect(repo.id) { withContext(Dispatchers.IO) { load() } }
     BackHandler { close() }
@@ -154,7 +187,9 @@ fun reach(hosts: List<String>): String = when {
                     when {
                         addon.installedVersion == null -> Action("Install", !busy, primary = true) { confirming = addon }
                         addon.updateAvailable -> Action("Update to ${addon.version}", !busy, primary = true) {
-                            work.addonCall("${addon.name} updated.") { client.install(repo.id, addon.id); load() }
+                            val update = { work.addonCall("${addon.name} updated.") { client.install(repo.id, addon.id); load() } }
+                            val warning = updateWarning(addon.installedHosts, addon.hosts, addon.installedRepo, repo.id, name)
+                            if (warning == null) update() else asking = PendingUpdate(addon.name, warning, update)
                         }
                         else -> Text("Installed", color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.SemiBold)
                     }
@@ -162,6 +197,7 @@ fun reach(hosts: List<String>): String = when {
             }
         }
     }
+    asking?.let { ConfirmUpdate(it) { asking = null } }
     confirming?.let { addon ->
         AlertDialog(onDismissRequest = { confirming = null }, title = { Text("Install ${addon.name}?") },
             text = { Text("It comes from $name and can reach ${reach(addon.hosts)}. Install addons only from people you trust.") },
