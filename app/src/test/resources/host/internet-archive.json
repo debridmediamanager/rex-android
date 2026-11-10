@@ -9,6 +9,12 @@
     "held": 0,
     "last_sync": 1794328362,
     "error": null,
+    "error_kind": null,
+    "hosts": [
+        "archive.org",
+        "*.archive.org"
+    ],
+    "deleted": 0,
     "manifest": {
         "id": "internet-archive",
         "name": "Internet Archive",

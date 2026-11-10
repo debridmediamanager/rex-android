@@ -252,6 +252,15 @@ private class PendingUpdate(val name: String, val warning: String, val update: (
                 }
             }
         }
+        if (current != null && current.deleted > 0) Panel {
+            val titles = if (current.deleted == 1L) "title" else "titles"
+            Text("You deleted ${current.deleted} $titles in a Plex app. They stay gone until you bring them back.")
+            Buttons {
+                Action("Bring back ${current.deleted} deleted $titles", !busy) {
+                    work.addonCall("Bringing them back. ${current.name} is syncing.") { client.restore(id); settings = current.copy(deleted = 0) }
+                }
+            }
+        }
         Buttons {
             Action("Back", modifier = Modifier.focusRequester(start)) { close() }
             if (current != null && current.fields.isNotEmpty()) Action("Save", !busy, primary = true) {

@@ -58,6 +58,21 @@ class AddonsClientTest {
         assertEquals("Internet Archive", settings.name)
         assertEquals(listOf(ConfigField("count", "How many films", "number", JsonPrimitive(100))), settings.fields)
         assertEquals(mapOf("count" to "100"), initialForm(settings))
+        assertEquals(0L, settings.deleted)
+    }
+
+    // Titles deleted in a Plex app stay away until the person brings them back.
+    @Test fun deletedTitlesCanBeBroughtBack() {
+        server.enqueue(MockResponse().setBody("""
+            {"id":"a","name":"A","deleted":3,"manifest":{"id":"a","name":"A","config":[]},"config":{}}
+        """.trimIndent()))
+        server.enqueue(MockResponse().setBody("{}"))
+        assertEquals(3L, client.settings("a").deleted)
+        client.restore("a")
+        server.takeRequest()
+        val restore = server.takeRequest()
+        assertEquals("POST /api/addons/a/restore", "${restore.method} ${restore.path}")
+        assertEquals("{}", restore.body.readUtf8())
     }
 
     // The shapes docs/api.md gives for a saved secret (masked) and an unset one (null).

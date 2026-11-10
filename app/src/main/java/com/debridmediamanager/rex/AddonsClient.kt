@@ -61,8 +61,11 @@ object AddonsToken {
     val default: JsonElement? = null, val required: Boolean = false,
 )
 
-/** An addon's settings as its manifest declares them, with what is set now (secrets masked). */
-data class AddonSettings(val name: String, val fields: List<ConfigField>, val values: Map<String, JsonElement>)
+/**
+ * An addon's settings as its manifest declares them, with what is set now (secrets masked), and how
+ * many of its titles the person deleted in a Plex app (rex keeps them out until they come back).
+ */
+data class AddonSettings(val name: String, val fields: List<ConfigField>, val values: Map<String, JsonElement>, val deleted: Long = 0)
 
 class ApiFailure(val status: Int, message: String) : IOException(message)
 
@@ -87,8 +90,11 @@ class AddonsClient(
         return AddonSettings(
             (manifest["name"] as? JsonPrimitive)?.contentOrNull ?: id,
             (manifest["config"] as? JsonArray).orEmpty().map { json.decodeFromJsonElement(ConfigField.serializer(), it) },
-            (answer["config"] as? JsonObject).orEmpty().filterValues { it !is JsonNull })
+            (answer["config"] as? JsonObject).orEmpty().filterValues { it !is JsonNull },
+            (answer["deleted"] as? JsonPrimitive)?.longOrNull ?: 0)
     }
+    /** Brings back the titles the person deleted in a Plex app, and syncs. */
+    fun restore(id: String) { call("POST", url("api", "addons", id, "restore"), JsonObject(emptyMap())) }
 
     fun repos(): List<Repo> = json.decodeFromString(call("GET", url("api", "repos")))
     /** Adds a repository by its git link; the host answers why when it refuses one. */
