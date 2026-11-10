@@ -6,6 +6,8 @@ import okhttp3.mockwebserver.MockWebServer
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Test
+import java.net.SocketTimeoutException
+import java.util.concurrent.TimeUnit
 
 /** The client against a stand-in for rex-addons' management API, as the contract describes it. */
 class AddonsClientTest {
@@ -191,6 +193,16 @@ class AddonsClientTest {
         assertTrue(first, Regex("[0-9a-f]{64}").matches(first))
         assertNotEquals(first, second)
         assertEquals(second, AddonsToken.current)
+    }
+
+    // The host clones the repository before it answers, which a slow device takes a while for.
+    @Test fun addingARepositoryWaitsLongerThanOtherCalls() {
+        val quick = okhttp3.OkHttpClient.Builder().readTimeout(300, TimeUnit.MILLISECONDS).build()
+        val client = AddonsClient(server.url("/").toString().removeSuffix("/"), quick)
+        server.enqueue(MockResponse().setBody("""{"id":"r","url":"https://github.com/u/r"}""").setHeadersDelay(1, TimeUnit.SECONDS))
+        assertEquals("r", client.addRepo("https://github.com/u/r").id)
+        server.enqueue(MockResponse().setBody("[]").setHeadersDelay(1, TimeUnit.SECONDS))
+        assertThrows(SocketTimeoutException::class.java) { client.repos() }
     }
 
     @Test fun aShortRepositoryLinkBecomesTheFullOne() {

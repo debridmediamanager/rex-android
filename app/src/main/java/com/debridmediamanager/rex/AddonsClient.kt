@@ -81,6 +81,8 @@ class AddonsClient(
     private val token: () -> String? = { AddonsToken.current },
 ) {
     private val base = base.toHttpUrl()
+    // Adding a repository answers only after the host cloned it, which takes a slow device a while.
+    private val patient by lazy { http.newBuilder().readTimeout(120, TimeUnit.SECONDS).build() }
 
     fun status(): HostStatus = json.decodeFromString(call("GET", url("api", "status")))
 
@@ -100,7 +102,7 @@ class AddonsClient(
 
     fun repos(): List<Repo> = json.decodeFromString(call("GET", url("api", "repos")))
     /** Adds a repository by its git link; the host answers why when it refuses one. */
-    fun addRepo(link: String): Repo = json.decodeFromString(call("POST", url("api", "repos"), buildJsonObject { put("url", link) }))
+    fun addRepo(link: String): Repo = json.decodeFromString(call("POST", url("api", "repos"), buildJsonObject { put("url", link) }, patient))
     /** Its installed addons stay, without further updates. */
     fun removeRepo(id: String) { call("DELETE", url("api", "repos", id)) }
     fun refreshRepo(id: String) { call("POST", url("api", "repos", id, "refresh"), JsonObject(emptyMap())) }
@@ -122,7 +124,7 @@ class AddonsClient(
     private fun url(vararg segments: String): HttpUrl =
         base.newBuilder().apply { segments.forEach(::addPathSegment) }.build()
 
-    private fun call(method: String, url: HttpUrl, body: JsonObject? = null): String {
+    private fun call(method: String, url: HttpUrl, body: JsonObject? = null, http: OkHttpClient = this.http): String {
         val request = Request.Builder().url(url).method(method, body?.toString()?.toRequestBody(jsonType))
             .apply { token()?.let { header("Authorization", "Bearer $it") } }.build()
         http.newCall(request).execute().use { response ->
