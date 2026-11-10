@@ -14,6 +14,7 @@ for the one feature named below.
 | **plex.tv** | The server's name, identifier, version and the addresses the Plex apps can reach it at | While rex runs and is signed in, as any Plex server reports itself |
 | **Plex's metadata service** | The ids of the titles your addons add, to fetch posters and descriptions | While rex runs and is signed in |
 | **debridmediamanager.com** (rex-direct) | The server's identifier, the server token Plex gave it, its local and public IP addresses and its port | Once signed in, then every 6 hours, so the Plex apps can reach rex over HTTPS away from home |
+| **Addon repositories you add** (such as github.com) | A request for the repository's contents | When you add or refresh a repository |
 | **Each addon's sites** | What the addon asks for, such as a catalog request to archive.org | When an addon syncs or a title plays |
 
 Your Plex account password never passes through the app: you sign in on Plex's own page. The
@@ -28,8 +29,9 @@ Uninstalling the app deletes all of it.
 
 ## Addons
 
-An addon is code from whoever wrote it. It runs sealed off from the rest of your device and can
-only reach the sites its manifest lists. Install addons only from people you trust.
+An addon is code from whoever wrote it, installed from a repository you added. It runs sealed
+off from the rest of your device and can only reach the sites it names, which rex shows you
+before you install it. Install addons only from people you trust.
 
 ## Children
 

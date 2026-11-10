@@ -24,10 +24,17 @@ explains what else your device needs.
 ## Addons
 
 **Addons** lists what each addon added, when it last synced and any problem. Turn one off,
-sync it now, change its settings, or remove it. To add one, paste the link to its
-`manifest.json`. Addons run sealed off from your device and reach only the sites their
-manifest names; still, install only addons from people you trust. How to write one:
-[rex-addons](https://github.com/debridmediamanager/rex-addons).
+sync it now, change its settings, update it or remove it.
+
+Addons come from **repositories**: git repositories that hold addons. Add one by its link
+(`github.com/user/repo` is enough), open it, and install what it offers; rex shows which
+websites an addon can reach before you install it. Refresh a repository to get its updates;
+removing one keeps the addons you installed from it, without further updates. Addons run sealed
+off from your device and reach only the sites they name; still, install only from people you
+trust. How to write one: [rex-addons](https://github.com/debridmediamanager/rex-addons).
+
+The GitHub release starts with rex-addons' own repository added. The Play Store build starts
+with no repository and only the bundled Internet Archive addon.
 
 **Logs** shows what rex and the addons said lately, with tokens, keys and passwords hidden.
 
@@ -46,14 +53,15 @@ make, Perl, pkg-config and nasm.
 export ANDROID_HOME=~/Library/Android/sdk
 ./build-natives.sh        # rex and the addon host at the commits in rex.ref and rex-addons.ref
 python3 build-ffmpeg.py   # ffmpeg and ffprobe, and the native source ZIP in artifacts/
-./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
+./gradlew :app:testGithubDebugUnitTest :app:lintGithubDebug :app:assembleGithubDebug
 ```
 
 On macOS, run `build-ffmpeg.py` with `SDKROOT` set to a Command Line Tools SDK that links,
 such as `/Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk`. Build trees live in
 `~/.cache/rex-android-native` (`REX_ANDROID_NATIVE_CACHE`); `REX_ANDROID_ABIS` narrows the ABIs.
 
-The four programs ship as `lib<name>.so` in `jniLibs` and run from the app's native library
+Two flavors: `github` (the APKs on GitHub, with rex-addons' repository as a default) and
+`play` (the AAB for the Play Store, with none). The four programs ship as `lib<name>.so` in `jniLibs` and run from the app's native library
 folder: Android executes nothing from an app's own storage. Legacy packaging keeps
 `extractNativeLibs` on, so the installer puts them there, for the APKs and for the splits Play
 builds from the AAB alike. Licenses and sources: [NATIVE-LICENSES.md](NATIVE-LICENSES.md).
@@ -61,17 +69,17 @@ builds from the AAB alike. Licenses and sources: [NATIVE-LICENSES.md](NATIVE-LIC
 **Release.** Sign with the upload key through `REX_ANDROID_KEYSTORE`,
 `REX_ANDROID_KEYSTORE_PASSWORD`, `REX_ANDROID_KEY_PASSWORD` and `REX_ANDROID_KEY_ALIAS`
 (default `upload`), set `REX_ANDROID_VERSION` and `REX_ANDROID_VERSION_CODE`, then run
-`./gradlew :app:lintRelease :app:assembleRelease :app:bundleRelease` and `./verify-release.sh`,
-which checks the signatures, the programs and the licenses and copies the APKs and the AAB into
-`artifacts/`. Pushing a `vX.Y.Z` tag does all of that on GitHub and attaches the results and the
+`./gradlew :app:lintGithubRelease :app:lintPlayRelease :app:assembleGithubRelease :app:bundlePlayRelease`
+and `./verify-release.sh`, which checks the signatures, the programs and the licenses and copies
+the GitHub APKs and the Play AAB into `artifacts/`. Pushing a `vX.Y.Z` tag does all of that on GitHub and attaches the results and the
 native sources to a draft release. Play Store material is in [play/](play/).
 
 ## Device tests
 
 ```sh
-./gradlew :app:assembleDebug :app:assembleDebugAndroidTest
-adb install -r app/build/outputs/apk/debug/app-<abi>-debug.apk
-adb install -r app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+./gradlew :app:assembleGithubDebug :app:assembleGithubDebugAndroidTest
+adb install -r app/build/outputs/apk/github/debug/app-github-<abi>-debug.apk
+adb install -r app/build/outputs/apk/androidTest/github/debug/app-github-debug-androidTest.apk
 adb shell am instrument -w com.debridmediamanager.rex.test/androidx.test.runner.AndroidJUnitRunner
 ```
 

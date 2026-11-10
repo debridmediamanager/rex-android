@@ -7,7 +7,7 @@ and as *shared* anything handed to a third party other than at the person's own 
 
 **Is all of the user data collected by your app encrypted in transit?** Yes: plex.tv, Plex's
 metadata service and debridmediamanager.com are HTTPS. (Addons choose their own sites; the
-bundled one uses HTTPS. rex talks to the Plex apps on the home network over plain HTTP as Plex
+bundled one uses HTTPS, and repositories are fetched over HTTPS. rex talks to the Plex apps on the home network over plain HTTP as Plex
 servers do, but that traffic never leaves the person's own devices.)
 
 **Do you provide a way for users to request that their data is deleted?** Yes: uninstalling

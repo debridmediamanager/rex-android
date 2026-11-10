@@ -11,10 +11,11 @@
 > it like any other server and play from it, at home and, once it's set up, away from home too.
 >
 > What it plays comes from addons. rex starts with one: the Internet Archive's public domain
-> films, from silent classics to film noir. Add more by pasting an addon's link.
+> films, from silent classics to film noir. Add more from addon repositories you trust.
 >
 > - Sign in once with your Plex account. On a TV, enter the code at plex.tv/link.
-> - Addons sync on their own. Turn them on or off, sync now, or change their settings.
+> - Addons sync on their own. Turn them on or off, sync now, update them or change their settings.
+> - Before you install an addon, rex shows which websites it can reach.
 > - Converts what a player can't play, using the device's own video encoder.
 > - Runs in the background with a notification you can stop it from, and can start when the
 >   device turns on.
