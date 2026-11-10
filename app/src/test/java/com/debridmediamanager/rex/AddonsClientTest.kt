@@ -36,13 +36,19 @@ class AddonsClientTest {
         server.enqueue(MockResponse().setBody("""
             {"version":"0.2.0","rex":{"url":"http://127.0.0.1:32500","reachable":false},"uptime":12,
              "addons":[{"id":"broken","name":"Broken","enabled":false,"state":"error","items":0,"held":3,
-               "last_sync":null,"error":"rex refused a sync that removes more than half","homepage":"x"}]}
+               "last_sync":null,"error":"rex refused a sync that removes more than half","homepage":"x",
+               "error_kind":"would_remove"},
+              {"id":"offline","name":"Offline","enabled":true,"state":"error","items":5,"held":0,
+               "last_sync":null,"error":"archive.org: connection refused","error_kind":null}]}
         """.trimIndent()))
-        val addon = client.status().addons.single()
+        val (addon, offline) = client.status().addons
         assertEquals("error", addon.state)
         assertEquals(3L, addon.held)
         assertNull(addon.lastSync)
         assertEquals("rex refused a sync that removes more than half", addon.error)
+        // Only rex's removal guard is worth overriding; any other failure just syncs again.
+        assertTrue(syncAnyway(addon))
+        assertFalse(syncAnyway(offline))
     }
 
     @Test fun settingsReadTheRealHostsAnswer() {

@@ -50,6 +50,12 @@ fun updateWarning(installedHosts: List<String>?, offeredHosts: List<String>?, in
     return "$from $sites Update only from people you trust."
 }
 
+/**
+ * Whether the sync button overrides rex: only after rex refused a sync that would remove more than
+ * half of the addon's titles. Any other failure just syncs again.
+ */
+fun syncAnyway(addon: Addon) = addon.errorKind == "would_remove"
+
 /** An update waiting for a yes, and why it asks. */
 private class PendingUpdate(val name: String, val warning: String, val update: () -> Unit)
 
@@ -98,11 +104,9 @@ private class PendingUpdate(val name: String, val warning: String, val update: (
                             val warning = updateWarning(addon.hosts, addon.updateHosts, repo, repo, repoName)
                             if (warning == null) update() else asking = PendingUpdate(addon.name, warning, update)
                         }
-                        // After a failed sync the error says why; syncing anyway also lets it remove
-                        // more than half of its titles, which rex refuses otherwise.
-                        val failed = addon.state == "error"
-                        Action(if (failed) "Sync anyway" else "Sync now", !busy && addon.enabled && addon.state != "syncing") {
-                            work.addonCall("Syncing ${addon.name}.") { client.sync(addon.id, force = failed) }
+                        val force = syncAnyway(addon)
+                        Action(if (force) "Sync anyway" else "Sync now", !busy && addon.enabled && addon.state != "syncing") {
+                            work.addonCall("Syncing ${addon.name}.") { client.sync(addon.id, force = force) }
                         }
                         Action("Settings", !busy) { editing = addon.id }
                         Action("Remove", !busy) { removing = addon }

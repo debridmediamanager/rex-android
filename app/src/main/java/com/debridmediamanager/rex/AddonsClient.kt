@@ -33,6 +33,8 @@ object AddonsToken {
     val id: String, val name: String = id, val version: String = "", val description: String = "",
     val enabled: Boolean = true, val state: String = "idle", val items: Long = 0, val held: Long = 0,
     @SerialName("last_sync") val lastSync: Long? = null, val error: String? = null,
+    /** "would_remove" when rex refused the last sync for removing more than half of the titles. */
+    @SerialName("error_kind") val errorKind: String? = null,
     val repo: String? = null, @SerialName("update_available") val updateAvailable: Boolean = false,
     /** The websites the installed copy can reach, and those the offered update could. */
     val hosts: List<String> = emptyList(), @SerialName("update_hosts") val updateHosts: List<String>? = null,
