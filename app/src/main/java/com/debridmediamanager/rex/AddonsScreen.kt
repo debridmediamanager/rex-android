@@ -62,7 +62,7 @@ fun reach(hosts: List<String>): String = when {
                     Toggle("On", addon.enabled) { on ->
                         work.addonCall(if (on) "${addon.name} is on." else "${addon.name} is off.") { client.enable(addon.id, on) }
                     }
-                    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Buttons {
                         val repo = addon.repo
                         if (addon.updateAvailable && repo != null) Action("Update", !busy, primary = true) {
                             work.addonCall("${addon.name} updated.") { client.install(repo, addon.id) }
@@ -88,7 +88,7 @@ fun reach(hosts: List<String>): String = when {
                     Text("${repo.addonCount} ${if (repo.addonCount == 1) "addon" else "addons"}" +
                         (repo.lastFetch?.let { " · checked ${ago(it)}" } ?: ""), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     repo.error?.takeIf { it.isNotBlank() }?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-                    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Buttons {
                         Action("Addons", !busy, primary = true) { browsing = repo }
                         Action("Refresh", !busy) { repoCall("Checked ${repo.name.ifBlank { repo.id }} for updates.") { client.refreshRepo(repo.id) } }
                         Action("Remove", !busy) { dropping = repo }
@@ -98,7 +98,7 @@ fun reach(hosts: List<String>): String = when {
             Panel {
                 Text("Add a repository", style = MaterialTheme.typography.titleLarge)
                 Input("Repository link", link, hint = "Like github.com/user/repo", link = true) { link = it }
-                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Buttons {
                     Action("Add", !busy && link.isNotBlank(), primary = true) {
                         val typed = link
                         repoCall("Repository added.") {
@@ -212,7 +212,7 @@ fun reach(hosts: List<String>): String = when {
                 }
             }
         }
-        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Buttons {
             Action("Back", modifier = Modifier.focusRequester(start)) { close() }
             if (current != null && current.fields.isNotEmpty()) Action("Save", !busy, primary = true) {
                 val checked = checkForm(current, input)

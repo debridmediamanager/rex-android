@@ -117,7 +117,7 @@ class MainActivity : ComponentActivity() {
                 Text("Name: ${runtime.serverName}")
                 runtime.lanAddresses().forEach { Text("At home: http://$it:${runtime.port}", color = MaterialTheme.colorScheme.secondary) }
             }
-            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Buttons {
                 Action("Start", !busy && !rex.running, primary = true) { RexService.send(context) }
                 Action("Stop", rex.running) { RexService.send(context, RexService.STOP) }
                 Action("Restart", rex.running) { RexService.send(context, RexService.RESTART) }
@@ -201,11 +201,20 @@ fun ago(seconds: Long): String =
                 containerColor = colors.surfaceVariant, contentColor = colors.onSurface,
                 focusedContainerColor = colors.primary, focusedContentColor = colors.onPrimary,
                 pressedContainerColor = colors.primary, pressedContentColor = colors.onPrimary,
-                disabledContainerColor = colors.surface, disabledContentColor = colors.onSurface.copy(alpha = 0.4f))) {
+                disabledContainerColor = colors.surface, disabledContentColor = colors.onSurface.copy(alpha = 0.4f)),
+            // A remote can land on a button that is off right now; it still has to show where focus is.
+            border = androidx.tv.material3.ButtonDefaults.border(focusedDisabledBorder =
+                androidx.tv.material3.Border(BorderStroke(2.dp, colors.primary)))) {
             androidx.tv.material3.Text(label, fontSize = 18.sp)
         }
     } else if (primary) Button(onClick = onClick, enabled = enabled, modifier = modifier) { Text(label) }
     else OutlinedButton(onClick = onClick, enabled = enabled, modifier = modifier) { Text(label) }
+}
+
+/** A row of buttons that scrolls sideways when it is too wide, with room for a TV button's focus zoom. */
+@Composable fun Buttons(content: @Composable RowScope.() -> Unit) {
+    Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 6.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp), content = content)
 }
 
 @Composable fun Title(text: String, subtitle: String = "") {

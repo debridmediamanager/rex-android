@@ -177,7 +177,7 @@ import kotlinx.coroutines.withContext
             Title("Sign in to Plex.", "Then open any Plex app signed in to the same account.")
             if (!rex.reachable) Panel { Text(listOf(rex.phase, rex.detail).filter(String::isNotBlank).joinToString(" · ")) }
             PlexPanel(work, busy)
-            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Buttons {
                 Action("Back", !busy) { step = 0 }
                 Action(if (rex.claimed) "Done" else "Skip for now", !busy, primary = rex.claimed) { finished() }
             }
