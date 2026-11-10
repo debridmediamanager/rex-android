@@ -1,0 +1,21 @@
+{
+    "version": "0.1.0",
+    "rex": {
+        "url": "http://127.0.0.1:32500",
+        "reachable": true
+    },
+    "addons": [
+        {
+            "id": "internet-archive",
+            "name": "Internet Archive",
+            "version": "1.0.0",
+            "description": "Public domain feature films from archive.org: classics, silents, noir and B-movies, streamed straight from the Internet Archive.",
+            "enabled": true,
+            "state": "idle",
+            "items": 100,
+            "held": 0,
+            "last_sync": 1794328362,
+            "error": null
+        }
+    ]
+}
