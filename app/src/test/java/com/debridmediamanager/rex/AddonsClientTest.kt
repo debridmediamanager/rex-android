@@ -142,6 +142,25 @@ class AddonsClientTest {
         assertNull(bundled.repo)
     }
 
+    // A restarted host demands its new token, so the client reads the current one on each call.
+    @Test fun everyCallCarriesTheHostsCurrentToken() {
+        var token: String? = "first"
+        val client = AddonsClient(server.url("/").toString().removeSuffix("/"), token = { token })
+        repeat(2) { server.enqueue(MockResponse().setBody(fixture("status.json"))) }
+        client.status()
+        token = "second"
+        client.status()
+        assertEquals(listOf("Bearer first", "Bearer second"), List(2) { server.takeRequest().getHeader("Authorization") })
+    }
+
+    @Test fun eachHostStartGetsAFreshRandomToken() {
+        val first = AddonsToken.fresh()
+        val second = AddonsToken.fresh()
+        assertTrue(first, Regex("[0-9a-f]{64}").matches(first))
+        assertNotEquals(first, second)
+        assertEquals(second, AddonsToken.current)
+    }
+
     @Test fun aShortRepositoryLinkBecomesTheFullOne() {
         assertEquals("https://github.com/debridmediamanager/rex-addons", repoLink(" github.com/debridmediamanager/rex-addons/ "))
         assertEquals("https://github.com/user/repo", repoLink("user/repo"))

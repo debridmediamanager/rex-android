@@ -82,6 +82,7 @@ class Runtime(val context: Context) {
         BuildConfig.DEFAULT_REPOS.forEach { arguments += listOf("--default-repo", it) }
         return ProcessBuilder(arguments).directory(data).apply {
             environment().putAll(nativeEnvironment())
+            environment()[AddonsToken.ENV] = AddonsToken.fresh()
             redirectErrorStream(true)
         }.start()
     }

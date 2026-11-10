@@ -25,6 +25,12 @@ class RedactionTest {
         assertEquals("source at https://[hidden]@media.example.org/dav", redact("source at https://user:pa55@media.example.org/dav"))
     }
 
+    @Test fun theAddonHostsTokenNeverReachesTheLogs() {
+        val token = AddonsToken.fresh()
+        Logs.add("addons", "environment REX_ADDONS_TOKEN=$token")
+        assertFalse(Logs.all().last().contains(token))
+    }
+
     @Test fun ordinaryLinesStayAsTheyAre() {
         val lines = listOf(
             "rex: listening on 0.0.0.0:32400",

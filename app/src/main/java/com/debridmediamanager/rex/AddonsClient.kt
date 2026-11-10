@@ -10,10 +10,22 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
+import java.security.SecureRandom
 import java.util.concurrent.TimeUnit
 
 /** The addon host's management API listens here, on loopback only. */
 const val ADDONS_PORT = 32410
+
+/**
+ * The secret the running addon host demands on every call: a fresh one each time the app starts
+ * the host, handed over in its environment only (never its arguments, which other apps can read).
+ */
+object AddonsToken {
+    const val ENV = "REX_ADDONS_TOKEN"
+    @Volatile var current: String? = null
+        private set
+    fun fresh(): String = ByteArray(32).also(SecureRandom()::nextBytes).joinToString("") { "%02x".format(it) }.also { current = it }
+}
 
 @Serializable data class HostStatus(val version: String = "", val rex: RexLink = RexLink(), val addons: List<Addon> = emptyList())
 @Serializable data class RexLink(val url: String = "", val reachable: Boolean = false)
@@ -54,6 +66,7 @@ private val jsonType = "application/json".toMediaType()
 class AddonsClient(
     base: String = "http://127.0.0.1:$ADDONS_PORT",
     private val http: OkHttpClient = OkHttpClient.Builder().connectTimeout(3, TimeUnit.SECONDS).readTimeout(30, TimeUnit.SECONDS).build(),
+    private val token: () -> String? = { AddonsToken.current },
 ) {
     private val base = base.toHttpUrl()
 
@@ -95,7 +108,8 @@ class AddonsClient(
         base.newBuilder().apply { segments.forEach(::addPathSegment) }.build()
 
     private fun call(method: String, url: HttpUrl, body: JsonObject? = null): String {
-        val request = Request.Builder().url(url).method(method, body?.toString()?.toRequestBody(jsonType)).build()
+        val request = Request.Builder().url(url).method(method, body?.toString()?.toRequestBody(jsonType))
+            .apply { token()?.let { header("Authorization", "Bearer $it") } }.build()
         http.newCall(request).execute().use { response ->
             val text = response.body?.string().orEmpty()
             if (!response.isSuccessful) {

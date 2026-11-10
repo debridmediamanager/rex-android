@@ -4,7 +4,8 @@ package com.debridmediamanager.rex
 object Logs {
     private val lines = ArrayDeque<String>()
     @Synchronized fun add(source: String, line: String) {
-        lines.addLast("$source: ${redact(line)}")
+        val token = AddonsToken.current
+        lines.addLast("$source: ${redact(if (token == null) line else line.replace(token, HIDDEN))}")
         while (lines.size > 500) lines.removeFirst()
     }
     @Synchronized fun all(): List<String> = lines.toList()
