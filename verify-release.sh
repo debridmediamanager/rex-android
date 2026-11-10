@@ -44,7 +44,9 @@ check_programs() {
     for license in FFmpeg-LGPL-3.0.txt GPL-3.0.txt OpenSSL-Apache-2.0.txt rex-LICENSE.txt rex-addons-LICENSE.txt; do
         unzip -p "$archive" "${prefix}assets/native-licenses/$license" | cmp - "app/src/main/assets/native-licenses/$license"
     done
-    unzip -Z1 "$archive" | grep -q "^${prefix}assets/addons/internet-archive/manifest.json$" ||
+    # Listed to a file first: grep -q stops reading early, and pipefail counts unzip's SIGPIPE.
+    unzip -Z1 "$archive" > "$scratch/entries"
+    grep -q "^${prefix}assets/addons/internet-archive/manifest.json$" "$scratch/entries" ||
         { echo "$archive does not carry the bundled addon" >&2; exit 1; }
 }
 
@@ -58,12 +60,14 @@ for abi in arm64-v8a armeabi-v7a x86_64; do
     grep -qF 'leanback-launchable-activity:' "$scratch/manifest"
     if grep -q 'application-debuggable' "$scratch/manifest"; then echo "Refusing a debuggable APK" >&2; exit 1; fi
     # The programs run from nativeLibraryDir, which only an extracting install fills.
-    "$build_tools/aapt" dump xmltree "$apk" AndroidManifest.xml | grep -q 'extractNativeLibs.*0xffffffff'
+    "$build_tools/aapt" dump xmltree "$apk" AndroidManifest.xml > "$scratch/xmltree"
+    grep -q 'extractNativeLibs.*0xffffffff' "$scratch/xmltree"
     check_programs "$apk" "" "$abi"
     cp "$apk" "artifacts/rex-android-$version-$abi.apk"
 done
 
-jarsigner -verify "$bundle" | grep -q 'jar verified'
+jarsigner -verify "$bundle" > "$scratch/jarsigner"
+grep -q 'jar verified' "$scratch/jarsigner"
 for abi in arm64-v8a armeabi-v7a x86_64; do check_programs "$bundle" "base/" "$abi"; done
 cp "$bundle" "artifacts/rex-android-$version-play.aab"
 echo "Verified the signed GitHub APKs and Play AAB for $version"
