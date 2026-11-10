@@ -8,6 +8,19 @@ Android 8.0 or newer. One APK fits phones and TVs; pick the one for your device'
 `arm64-v8a` for most phones and TV boxes, `armeabi-v7a` for older or cheaper 32-bit boxes
 (Fire TV Sticks among them), `x86_64` for emulators. Google Play picks for you.
 
+<p>
+  <img src="docs/screenshots/phone-status.png" width="32%" alt="Status: rex running, with the Internet Archive addon's 100 titles">
+  <img src="docs/screenshots/phone-addons.png" width="32%" alt="Addons: installed addons and repositories">
+  <img src="docs/screenshots/phone-repo-addons.png" width="32%" alt="A repository's addons, with the sites each one can reach">
+</p>
+<p>
+  <img src="docs/screenshots/tv-status.png" width="49%" alt="Status on a TV">
+  <img src="docs/screenshots/tv-addons.png" width="49%" alt="Addons on a TV">
+</p>
+<p>
+  <img src="docs/screenshots/tv-signin-code.png" width="49%" alt="Signing in to Plex on a TV with a plex.tv/link code">
+</p>
+
 ## Set up
 
 1. Open rex, give it a name and press **Start rex**. If another Plex server already runs on
