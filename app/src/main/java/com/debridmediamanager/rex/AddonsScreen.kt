@@ -59,7 +59,7 @@ fun reach(hosts: List<String>): String = when {
                     if (addon.description.isNotBlank()) Text(addon.description)
                     Text(addonSummary(addon), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     addon.error?.takeIf { it.isNotBlank() }?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-                    Toggle("On", addon.enabled) { on ->
+                    Toggle("Enabled", addon.enabled) { on ->
                         work.addonCall(if (on) "${addon.name} is on." else "${addon.name} is off.") { client.enable(addon.id, on) }
                     }
                     Buttons {
