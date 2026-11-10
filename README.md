@@ -1,6 +1,6 @@
 # rex for Android
 
-rex turns a phone, tablet, Android TV, Google TV or Fire TV into a media server for the Plex
+[rex](https://github.com/debridmediamanager/rex) turns a phone, tablet, Android TV, Google TV or Fire TV into a media server for the Plex
 apps. The Plex apps on your devices find it like any Plex server and play from it. What it
 plays comes from addons; the app starts with the Internet Archive's public domain films.
 
