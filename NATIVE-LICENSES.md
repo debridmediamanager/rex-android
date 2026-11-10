@@ -6,7 +6,7 @@ library folder (`lib/<abi>/`), the only place Android lets an app start a progra
 | File | What it is | License | Source |
 |---|---|---|---|
 | `librex.so` | rex, the media server for the Plex apps | PolyForm Noncommercial 1.0.0 | [debridmediamanager/rex](https://github.com/debridmediamanager/rex) at the commit in `rex.ref` |
-| `librexaddons.so` | the addon host, which runs addons and feeds rex | see `rex-addons-LICENSE.txt` | [debridmediamanager/rex-addons](https://github.com/debridmediamanager/rex-addons) at the commit in `rex-addons.ref` |
+| `librexaddons.so` | the addon host, which runs addons (in QuickJS) and feeds rex | MIT | [debridmediamanager/rex-addons](https://github.com/debridmediamanager/rex-addons) at the commit in `rex-addons.ref` |
 | `libffmpeg.so` | rex's converter | LGPL 3.0 or later | FFmpeg 9.0.1, unmodified |
 | `libffprobe.so` | reads what a media file holds | LGPL 3.0 or later | FFmpeg 9.0.1, unmodified |
 
