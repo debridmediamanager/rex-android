@@ -69,7 +69,7 @@ class AddonsClientTest {
 
     @Test fun actionsSendTheContractsRequests() {
         repeat(6) { server.enqueue(MockResponse().setBody("{}")) }
-        client.install("https://example.org/addon/manifest.json")
+        client.install("r", "a")
         client.enable("a", false)
         client.sync("a")
         client.configure("a", buildJsonObject { put("q", "dogs") })
@@ -80,17 +80,84 @@ class AddonsClientTest {
             "PUT /api/addons/a/config", "DELETE /api/addons/a", "POST /api/addons/a/sync"), requests.map { "${it.method} ${it.path}" })
         assertEquals("{}", requests[2].body.readUtf8())
         assertEquals(buildJsonObject { put("force", true) }, Json.parseToJsonElement(requests[5].body.readUtf8()))
-        assertEquals(buildJsonObject { put("url", "https://example.org/addon/manifest.json") }, Json.parseToJsonElement(requests[0].body.readUtf8()))
+        assertEquals(buildJsonObject { put("repo", "r"); put("addon", "a") }, Json.parseToJsonElement(requests[0].body.readUtf8()))
         assertEquals(buildJsonObject { put("enabled", false) }, Json.parseToJsonElement(requests[1].body.readUtf8()))
         assertEquals(buildJsonObject { put("q", "dogs") }, Json.parseToJsonElement(requests[3].body.readUtf8()))
         assertTrue(requests[0].getHeader("Content-Type")!!.startsWith("application/json"))
     }
 
+    // The repository contract (rex-addons, 2026-11-10); no host answers it yet, so these are its shapes.
+    @Test fun repositoriesAndTheirAddons() {
+        server.enqueue(MockResponse().setBody("""
+            [{"id":"rex-addons","url":"https://github.com/debridmediamanager/rex-addons","name":"rex addons",
+              "description":"The official ones","commit":"1dd7a64","last_fetch":1794328362,"error":null,
+              "addons":["internet-archive","stremio"]},
+             {"id":"broken","url":"https://git.example/x","name":"","description":"","commit":null,"last_fetch":null,
+              "error":"git clone failed: 404","addons":0}]
+        """.trimIndent()))
+        server.enqueue(MockResponse().setBody("""
+            [{"id":"internet-archive","name":"Internet Archive","version":"1.1.0","description":"Films",
+              "hosts":["archive.org","*.archive.org"],"installed_version":"1.0.0","update_available":true},
+             {"id":"stremio","name":"Stremio","version":"1.0.0","description":"","hosts":["*"],
+              "installed_version":null,"update_available":false}]
+        """.trimIndent()))
+        val repos = client.repos()
+        assertEquals("/api/repos", server.takeRequest().path)
+        assertEquals(listOf(2, 0), repos.map { it.addonCount })
+        assertEquals("git clone failed: 404", repos[1].error)
+        val offered = client.repoAddons("rex-addons")
+        assertEquals("/api/repos/rex-addons/addons", server.takeRequest().path)
+        assertTrue(offered[0].updateAvailable)
+        assertEquals("1.0.0", offered[0].installedVersion)
+        assertNull(offered[1].installedVersion)
+        assertEquals("archive.org, *.archive.org", reach(offered[0].hosts))
+        assertEquals("any website", reach(offered[1].hosts))
+    }
+
+    @Test fun repositoryActionsSendTheContractsRequests() {
+        server.enqueue(MockResponse().setResponseCode(201).setBody("""{"id":"r","url":"https://github.com/u/r","addons":[]}"""))
+        repeat(3) { server.enqueue(MockResponse().setBody("{}")) }
+        assertEquals("r", client.addRepo("https://github.com/u/r").id)
+        client.refreshRepo("r")
+        client.install("r", "internet-archive")
+        client.removeRepo("r")
+        val requests = List(4) { server.takeRequest() }
+        assertEquals(listOf("POST /api/repos", "POST /api/repos/r/refresh", "POST /api/addons", "DELETE /api/repos/r"),
+            requests.map { "${it.method} ${it.path}" })
+        assertEquals(buildJsonObject { put("url", "https://github.com/u/r") }, Json.parseToJsonElement(requests[0].body.readUtf8()))
+        assertEquals(buildJsonObject { put("repo", "r"); put("addon", "internet-archive") }, Json.parseToJsonElement(requests[2].body.readUtf8()))
+    }
+
+    @Test fun anInstalledAddonSaysWhereItCameFromAndWhetherItCanUpdate() {
+        server.enqueue(MockResponse().setBody("""
+            {"version":"0.2.0","rex":{"url":"http://127.0.0.1:32400","reachable":true},"addons":[
+              {"id":"internet-archive","name":"Internet Archive","enabled":true,"state":"idle","items":100,"held":0,
+               "last_sync":1794328362,"error":null,"repo":"rex-addons","update_available":true},
+              {"id":"bundled","name":"Bundled","enabled":true,"state":"idle","items":1,"held":0,"last_sync":null,
+               "error":null,"repo":null,"update_available":false}]}
+        """.trimIndent()))
+        val (fromRepo, bundled) = client.status().addons
+        assertEquals("rex-addons", fromRepo.repo)
+        assertTrue(fromRepo.updateAvailable)
+        assertNull(bundled.repo)
+    }
+
+    @Test fun aShortRepositoryLinkBecomesTheFullOne() {
+        assertEquals("https://github.com/debridmediamanager/rex-addons", repoLink(" github.com/debridmediamanager/rex-addons/ "))
+        assertEquals("https://github.com/user/repo", repoLink("user/repo"))
+        assertEquals("https://gitlab.com/group/sub/repo", repoLink("gitlab.com/group/sub/repo"))
+        assertEquals("https://git.example.org/me/addons.git", repoLink("https://git.example.org/me/addons.git"))
+        assertNull(repoLink("http://github.com/user/repo"))
+        assertNull(repoLink("just words"))
+        assertNull(repoLink("repo"))
+        assertNull(repoLink(""))
+    }
+
     @Test fun theHostsErrorIsWhatThePersonSees() {
-        // What rex-addons 1dd7a64 answered for a link with no addon behind it.
+        // The wording rex-addons 1dd7a64 used for a link with nothing behind it.
         val refusal = "https://example.org/nothing/manifest.json: https://example.org/nothing/manifest.json: status code 404"
         server.enqueue(MockResponse().setResponseCode(400).setBody("""{"error":"$refusal"}"""))
-        val failure = assertThrows(ApiFailure::class.java) { client.install("https://example.org/nothing/manifest.json") }
+        val failure = assertThrows(ApiFailure::class.java) { client.addRepo("https://example.org/nothing") }
         assertEquals(400, failure.status)
         assertEquals(refusal, failure.message)
         server.enqueue(MockResponse().setResponseCode(502).setBody("<html>bad gateway</html>"))

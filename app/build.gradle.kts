@@ -16,6 +16,19 @@ android {
         versionName = providers.environmentVariable("REX_ANDROID_VERSION").orElse("0.1.0-dev").get()
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
+    // github: the release on GitHub, which starts with rex-addons' own repository. play: the
+    // store build, which adds no repository and ships only the bundled Internet Archive addon.
+    flavorDimensions += "store"
+    productFlavors {
+        create("github") {
+            dimension = "store"
+            buildConfigField("String[]", "DEFAULT_REPOS", "{\"https://github.com/debridmediamanager/rex-addons\"}")
+        }
+        create("play") {
+            dimension = "store"
+            buildConfigField("String[]", "DEFAULT_REPOS", "{}")
+        }
+    }
     signingConfigs {
         // The upload key lives outside the repository; CI writes it from a secret.
         if (System.getenv("REX_ANDROID_KEYSTORE") != null) {

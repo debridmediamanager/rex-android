@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Checks the signed release APKs and AAB before they are published, and copies them into
+# Checks the signed GitHub APKs and the Play AAB before they are published, and copies them into
 # artifacts/ under their release names. Run after build-natives.sh, build-ffmpeg.py and
-# :app:assembleRelease :app:bundleRelease, with REX_ANDROID_VERSION set.
+# :app:assembleGithubRelease :app:bundlePlayRelease, with REX_ANDROID_VERSION set.
 set -euo pipefail
 cd "$(dirname "$0")"
 version=${REX_ANDROID_VERSION:?Set REX_ANDROID_VERSION to the release version}
@@ -10,8 +10,8 @@ build_tools="$sdk/build-tools/36.0.0"
 ndk=${ANDROID_NDK_HOME:-$sdk/ndk/28.2.13676358}
 case "$(uname -s)" in Darwin) host=darwin-x86_64 ;; *) host=linux-x86_64 ;; esac
 readelf="$ndk/toolchains/llvm/prebuilt/$host/bin/llvm-readelf"
-apks=app/build/outputs/apk/release
-bundle=app/build/outputs/bundle/release/app-release.aab
+apks=app/build/outputs/apk/github/release
+bundle=app/build/outputs/bundle/playRelease/app-play-release.aab
 programs="librex.so librexaddons.so libffmpeg.so libffprobe.so"
 scratch=$(mktemp -d)
 trap 'rm -rf "$scratch"' EXIT
@@ -49,7 +49,7 @@ check_programs() {
 }
 
 for abi in arm64-v8a armeabi-v7a x86_64; do
-    apk="$apks/app-$abi-release.apk"
+    apk="$apks/app-github-$abi-release.apk"
     "$build_tools/apksigner" verify "$apk"
     "$build_tools/zipalign" -c -P 16 4 "$apk"
     "$build_tools/aapt" dump badging "$apk" > "$scratch/manifest"
@@ -65,5 +65,5 @@ done
 
 jarsigner -verify "$bundle" | grep -q 'jar verified'
 for abi in arm64-v8a armeabi-v7a x86_64; do check_programs "$bundle" "base/" "$abi"; done
-cp "$bundle" "artifacts/rex-android-$version.aab"
-echo "Verified signed APKs and AAB for $version"
+cp "$bundle" "artifacts/rex-android-$version-play.aab"
+echo "Verified the signed GitHub APKs and Play AAB for $version"

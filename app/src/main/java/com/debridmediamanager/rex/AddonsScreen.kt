@@ -24,19 +24,34 @@ private fun Work.addonCall(done: String, call: () -> Unit) = this {
     done
 }
 
+/** What an addon can reach, from its manifest's `hosts`. */
+fun reach(hosts: List<String>): String = when {
+    "*" in hosts -> "any website"
+    hosts.isEmpty() -> "no websites"
+    else -> hosts.joinToString(", ")
+}
+
 @Composable fun AddonsScreen(work: Work, busy: Boolean) {
     val addons by Status.addons.collectAsStateWithLifecycle()
     var editing by remember { mutableStateOf<String?>(null) }
+    var browsing by remember { mutableStateOf<Repo?>(null) }
     var removing by remember { mutableStateOf<Addon?>(null) }
-    var url by remember { mutableStateOf("") }
-    val open = editing
-    if (open != null) { AddonSettingsForm(open, work, busy) { editing = null }; return }
+    var dropping by remember { mutableStateOf<Repo?>(null) }
+    var repos by remember { mutableStateOf<List<Repo>>(emptyList()) }
+    var link by remember { mutableStateOf("") }
     val host = addons.host
+    LaunchedEffect(host != null, browsing) {
+        if (host != null) withContext(Dispatchers.IO) { runCatching { client.repos() } }.onSuccess { repos = it }
+    }
+    // Runs a repository call, then lists the repositories again.
+    val repoCall = { done: String, call: () -> Unit -> work.addonCall(done) { call(); repos = client.repos() } }
+    editing?.let { id -> AddonSettingsForm(id, work, busy) { editing = null }; return }
+    browsing?.let { repo -> RepoScreen(repo, work, busy) { browsing = null }; return }
     ScrollPage {
         Title("Addons", "Addons bring things to watch into rex.")
         if (host == null) Panel { Text(addons.detail.ifBlank { "Start rex to manage addons." }) }
         else {
-            if (host.addons.isEmpty()) Panel { Text("No addons yet. Add one below.") }
+            if (host.addons.isEmpty()) Panel { Text("No addons yet. Install one from a repository below.") }
             host.addons.forEach { addon ->
                 Panel {
                     Text(listOf(addon.name, addon.version).filter(String::isNotBlank).joinToString(" "),
@@ -48,6 +63,10 @@ private fun Work.addonCall(done: String, call: () -> Unit) = this {
                         work.addonCall(if (on) "${addon.name} is on." else "${addon.name} is off.") { client.enable(addon.id, on) }
                     }
                     Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        val repo = addon.repo
+                        if (addon.updateAvailable && repo != null) Action("Update", !busy, primary = true) {
+                            work.addonCall("${addon.name} updated.") { client.install(repo, addon.id) }
+                        }
                         // After a failed sync the error says why; syncing anyway also lets it remove
                         // more than half of its titles, which rex refuses otherwise.
                         val failed = addon.state == "error"
@@ -59,15 +78,36 @@ private fun Work.addonCall(done: String, call: () -> Unit) = this {
                     }
                 }
             }
+            Title("Repositories", "Where addons come from. Install only from people you trust.")
+            if (repos.isEmpty()) Panel { Text("No repositories yet. Add one to find addons.") }
+            repos.forEach { repo ->
+                Panel {
+                    Text(repo.name.ifBlank { repo.id }, style = MaterialTheme.typography.titleLarge)
+                    Text(repo.url, color = MaterialTheme.colorScheme.secondary)
+                    if (repo.description.isNotBlank()) Text(repo.description)
+                    Text("${repo.addonCount} ${if (repo.addonCount == 1) "addon" else "addons"}" +
+                        (repo.lastFetch?.let { " · checked ${ago(it)}" } ?: ""), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    repo.error?.takeIf { it.isNotBlank() }?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Action("Addons", !busy, primary = true) { browsing = repo }
+                        Action("Refresh", !busy) { repoCall("Checked ${repo.name.ifBlank { repo.id }} for updates.") { client.refreshRepo(repo.id) } }
+                        Action("Remove", !busy) { dropping = repo }
+                    }
+                }
+            }
             Panel {
-                Text("Add an addon", style = MaterialTheme.typography.titleLarge)
-                Input("Addon link", url, hint = "The address of its manifest.json", link = true) { url = it }
-                Action("Add", !busy && url.isNotBlank(), primary = true) {
-                    val link = url.trim()
-                    work.addonCall("Addon added.") {
-                        require(link.startsWith("https://") || link.startsWith("http://")) { "An addon link starts with https://" }
-                        client.install(link)
-                        url = ""
+                Text("Add a repository", style = MaterialTheme.typography.titleLarge)
+                Input("Repository link", link, hint = "Like github.com/user/repo", link = true) { link = it }
+                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Action("Add", !busy && link.isNotBlank(), primary = true) {
+                        val typed = link
+                        repoCall("Repository added.") {
+                            client.addRepo(repoLink(typed) ?: error("That isn't a repository link. Try github.com/user/repo."))
+                            link = ""
+                        }
+                    }
+                    if (repos.isNotEmpty()) Action("Refresh all", !busy) {
+                        repoCall("Checked every repository for updates.") { repos.forEach { client.refreshRepo(it.id) } }
                     }
                 }
             }
@@ -78,6 +118,58 @@ private fun Work.addonCall(done: String, call: () -> Unit) = this {
             text = { Text("Its titles leave the Plex apps and its settings are deleted.") },
             confirmButton = { Action("Remove", primary = true) { removing = null; work.addonCall("${addon.name} removed.") { client.remove(addon.id) } } },
             dismissButton = { Action("Cancel") { removing = null } })
+    }
+    dropping?.let { repo ->
+        val name = repo.name.ifBlank { repo.id }
+        AlertDialog(onDismissRequest = { dropping = null }, title = { Text("Remove $name?") },
+            text = { Text("Addons you installed from it stay, but they won't get updates.") },
+            confirmButton = { Action("Remove", primary = true) { dropping = null; repoCall("$name removed.") { client.removeRepo(repo.id) } } },
+            dismissButton = { Action("Cancel") { dropping = null } })
+    }
+}
+
+/** A repository's addons, each with what it can reach, to install or update. */
+@Composable fun RepoScreen(repo: Repo, work: Work, busy: Boolean, close: () -> Unit) {
+    val name = repo.name.ifBlank { repo.id }
+    var offered by remember { mutableStateOf<List<RepoAddon>?>(null) }
+    var problem by remember { mutableStateOf("") }
+    var confirming by remember { mutableStateOf<RepoAddon?>(null) }
+    val load = { runCatching { client.repoAddons(repo.id) }.onSuccess { offered = it }.onFailure { problem = it.message ?: "Can't list its addons." } }
+    LaunchedEffect(repo.id) { withContext(Dispatchers.IO) { load() } }
+    BackHandler { close() }
+    val start = remember { FocusRequester() }
+    LaunchedEffect(Unit) { runCatching { start.requestFocus() } }
+    ScrollPage {
+        Title(name, repo.url)
+        Action("Back", modifier = Modifier.focusRequester(start)) { close() }
+        val list = offered
+        when {
+            list == null -> Panel { Text(problem.ifBlank { "Loading…" }) }
+            list.isEmpty() -> Panel { Text("This repository has no addons.") }
+            else -> list.forEach { addon ->
+                Panel {
+                    Text(listOf(addon.name, addon.version).filter(String::isNotBlank).joinToString(" "), style = MaterialTheme.typography.titleLarge)
+                    if (addon.description.isNotBlank()) Text(addon.description)
+                    Text("Can reach ${reach(addon.hosts)}.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    when {
+                        addon.installedVersion == null -> Action("Install", !busy, primary = true) { confirming = addon }
+                        addon.updateAvailable -> Action("Update to ${addon.version}", !busy, primary = true) {
+                            work.addonCall("${addon.name} updated.") { client.install(repo.id, addon.id); load() }
+                        }
+                        else -> Text("Installed", color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.SemiBold)
+                    }
+                }
+            }
+        }
+    }
+    confirming?.let { addon ->
+        AlertDialog(onDismissRequest = { confirming = null }, title = { Text("Install ${addon.name}?") },
+            text = { Text("It comes from $name and can reach ${reach(addon.hosts)}. Install addons only from people you trust.") },
+            confirmButton = { Action("Install", primary = true) {
+                confirming = null
+                work.addonCall("${addon.name} installed. It starts syncing now.") { client.install(repo.id, addon.id); load() }
+            } },
+            dismissButton = { Action("Cancel") { confirming = null } })
     }
 }
 

@@ -21,6 +21,21 @@ const val ADDONS_PORT = 32410
     val id: String, val name: String = id, val version: String = "", val description: String = "",
     val enabled: Boolean = true, val state: String = "idle", val items: Long = 0, val held: Long = 0,
     @SerialName("last_sync") val lastSync: Long? = null, val error: String? = null,
+    val repo: String? = null, @SerialName("update_available") val updateAvailable: Boolean = false,
+)
+/** A git repository addons are installed from. */
+@Serializable data class Repo(
+    val id: String, val url: String, val name: String = "", val description: String = "", val commit: String? = null,
+    @SerialName("last_fetch") val lastFetch: Long? = null, val error: String? = null, val addons: JsonElement? = null,
+) {
+    /** How many addons it offers ("addons" may be the list or its count). */
+    val addonCount: Int get() = (addons as? JsonArray)?.size ?: (addons as? JsonPrimitive)?.intOrNull ?: 0
+}
+/** An addon a repository offers, and whether this device has it. */
+@Serializable data class RepoAddon(
+    val id: String, val name: String = id, val version: String = "", val description: String = "",
+    val hosts: List<String> = emptyList(), @SerialName("installed_version") val installedVersion: String? = null,
+    @SerialName("update_available") val updateAvailable: Boolean = false,
 )
 @Serializable data class ConfigField(
     val key: String, val label: String = key, val type: String = "text",
@@ -55,7 +70,17 @@ class AddonsClient(
             (answer["config"] as? JsonObject).orEmpty().filterValues { it !is JsonNull })
     }
 
-    fun install(manifestUrl: String) { call("POST", url("api", "addons"), buildJsonObject { put("url", manifestUrl) }) }
+    fun repos(): List<Repo> = json.decodeFromString(call("GET", url("api", "repos")))
+    /** Adds a repository by its git link; the host answers why when it refuses one. */
+    fun addRepo(link: String): Repo = json.decodeFromString(call("POST", url("api", "repos"), buildJsonObject { put("url", link) }))
+    /** Its installed addons stay, without further updates. */
+    fun removeRepo(id: String) { call("DELETE", url("api", "repos", id)) }
+    fun refreshRepo(id: String) { call("POST", url("api", "repos", id, "refresh"), JsonObject(emptyMap())) }
+    fun repoAddons(id: String): List<RepoAddon> = json.decodeFromString(call("GET", url("api", "repos", id, "addons")))
+    /** Installs an addon from a repository, or updates it when it is installed already. */
+    fun install(repo: String, addon: String) {
+        call("POST", url("api", "addons"), buildJsonObject { put("repo", repo); put("addon", addon) })
+    }
     fun remove(id: String) { call("DELETE", url("api", "addons", id)) }
     fun configure(id: String, values: JsonObject) { call("PUT", url("api", "addons", id, "config"), values) }
     /** [force] lets the sync remove more than half of the addon's titles, which rex otherwise refuses. */
@@ -80,5 +105,21 @@ class AddonsClient(
             }
             return text
         }
+    }
+}
+
+/**
+ * What a person typed as a repository, as the https link the host clones: a short
+ * `github.com/user/repo` or even `user/repo` (GitHub) saves typing it all with a remote.
+ */
+fun repoLink(typed: String): String? {
+    val text = typed.trim().removeSuffix("/")
+    if (text.isEmpty() || text.any(Char::isWhitespace)) return null
+    return when {
+        text.startsWith("https://") -> text
+        text.contains("://") -> null
+        text.split('/').let { it.size == 2 && '.' !in it[0] && it.all(String::isNotEmpty) } -> "https://github.com/$text"
+        '.' in text.substringBefore('/') && '/' in text -> "https://$text"
+        else -> null
     }
 }

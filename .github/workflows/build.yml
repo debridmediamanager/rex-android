@@ -16,10 +16,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: '17', cache: gradle }
-      - run: ./gradlew --no-daemon :app:testDebugUnitTest :app:lintDebug
+      - run: ./gradlew --no-daemon :app:testGithubDebugUnitTest :app:testPlayDebugUnitTest :app:lintGithubDebug :app:lintPlayDebug
 
-  # A tag vX.Y.Z builds every program from source, signs the APKs and the AAB with the upload key
-  # and attaches them, with the native sources, to a draft release that is published by hand.
+  # A tag vX.Y.Z builds every program from source, signs the GitHub APKs and the Play AAB with
+  # the upload key and attaches them, with the native sources, to a draft release published by hand.
   release:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: check
@@ -58,7 +58,7 @@ jobs:
           test -n "$KEYSTORE_BASE64" || { echo "The signing secrets are missing" >&2; exit 1; }
           echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.jks"
           export REX_ANDROID_KEYSTORE="$RUNNER_TEMP/upload.jks"
-          ./gradlew --no-daemon :app:lintRelease :app:assembleRelease :app:bundleRelease
+          ./gradlew --no-daemon :app:lintGithubRelease :app:lintPlayRelease :app:assembleGithubRelease :app:bundlePlayRelease
           ./verify-release.sh
           rm "$RUNNER_TEMP/upload.jks"
       - name: Draft release

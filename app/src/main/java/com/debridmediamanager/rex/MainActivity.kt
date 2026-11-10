@@ -152,10 +152,12 @@ fun addonSummary(addon: Addon): String = listOfNotNull(
 ).joinToString(" · ")
 
 /** `last_sync` is Unix seconds, or null before the first sync that worked. */
-private fun lastSync(addon: Addon): String? = addon.lastSync?.takeIf { it > 0 }?.let {
-    if (System.currentTimeMillis() - it * 1000 < 60_000) "just now"
-    else android.text.format.DateUtils.getRelativeTimeSpanString(it * 1000).toString()
-}
+private fun lastSync(addon: Addon): String? = addon.lastSync?.takeIf { it > 0 }?.let(::ago)
+
+/** Unix seconds as "just now" or "5 minutes ago". */
+fun ago(seconds: Long): String =
+    if (System.currentTimeMillis() - seconds * 1000 < 60_000) "just now"
+    else android.text.format.DateUtils.getRelativeTimeSpanString(seconds * 1000).toString()
 
 // The one-time Plex sign-in that claims rex, and the way into a Plex app once it is claimed.
 @Composable fun PlexPanel(work: Work, busy: Boolean) {

@@ -78,6 +78,8 @@ class Runtime(val context: Context) {
         val arguments = mutableListOf(addonsBinary.path, "--listen", "127.0.0.1:$ADDONS_PORT", "--rex", rexUrl,
             "--data", data.path, "--ffprobe", ffprobe.path)
         bundledAddons()?.let { arguments += listOf("--bundled", it.path) }
+        // Read on the host's first start only; afterwards the person's own list stands.
+        BuildConfig.DEFAULT_REPOS.forEach { arguments += listOf("--default-repo", it) }
         return ProcessBuilder(arguments).directory(data).apply {
             environment().putAll(nativeEnvironment())
             redirectErrorStream(true)
