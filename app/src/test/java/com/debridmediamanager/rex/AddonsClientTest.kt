@@ -124,7 +124,7 @@ class AddonsClientTest {
               "hosts":["archive.org","*.archive.org","cdn.example.org"],"installed_version":"1.0.0","update_available":true,
               "installed_hosts":["archive.org","*.archive.org"],"installed_repo":null,"compatible":true},
              {"id":"stremio","name":"Stremio","version":"1.0.0","description":"","hosts":["*"],
-              "installed_version":null,"update_available":false,"installed_hosts":null,"installed_repo":null,"compatible":true}]
+              "installed_version":null,"update_available":false,"installed_hosts":null,"installed_repo":null,"compatible":false}]
         """.trimIndent()))
         val repos = client.repos()
         assertEquals("/api/repos", server.takeRequest().path)
@@ -138,6 +138,8 @@ class AddonsClientTest {
         assertEquals(listOf("archive.org", "*.archive.org"), offered[0].installedHosts)
         assertNull(offered[0].installedRepo)
         assertNull(offered[1].installedHosts)
+        assertTrue(offered[0].compatible)
+        assertFalse(offered[1].compatible)
         assertEquals("archive.org, *.archive.org, cdn.example.org", reach(offered[0].hosts))
         assertEquals("any website", reach(offered[1].hosts))
     }

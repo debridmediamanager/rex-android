@@ -55,6 +55,8 @@ object AddonsToken {
     @SerialName("installed_hosts") val installedHosts: List<String>? = null,
     /** The repository the installed copy came from; null for the copy built into the app. */
     @SerialName("installed_repo") val installedRepo: String? = null,
+    /** False when it needs a newer addon host than this app carries; installing it is refused. */
+    val compatible: Boolean = true,
 )
 @Serializable data class ConfigField(
     val key: String, val label: String = key, val type: String = "text",

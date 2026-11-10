@@ -189,13 +189,15 @@ private class PendingUpdate(val name: String, val warning: String, val update: (
                     if (addon.description.isNotBlank()) Text(addon.description)
                     Text("Can reach ${reach(addon.hosts)}.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     when {
+                        addon.installedVersion != null && !addon.updateAvailable ->
+                            Text("Installed", color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.SemiBold)
+                        !addon.compatible -> Text("Needs a newer version of this app", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         addon.installedVersion == null -> Action("Install", !busy, primary = true) { confirming = addon }
-                        addon.updateAvailable -> Action("Update to ${addon.version}", !busy, primary = true) {
+                        else -> Action("Update to ${addon.version}", !busy, primary = true) {
                             val update = { work.addonCall("${addon.name} updated.") { client.install(repo.id, addon.id); load() } }
                             val warning = updateWarning(addon.installedHosts, addon.hosts, addon.installedRepo, repo.id, name)
                             if (warning == null) update() else asking = PendingUpdate(addon.name, warning, update)
                         }
-                        else -> Text("Installed", color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
