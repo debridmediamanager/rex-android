@@ -37,7 +37,9 @@ explains what else your device needs.
 ## Addons
 
 **Addons** lists what each addon added, when it last synced and any problem. Turn one off,
-sync it now, change its settings, update it or remove it.
+sync it now, change its settings, update it or remove it. An update that can reach other websites,
+or comes from another repository, asks you first. Titles you delete in a Plex app stay gone;
+the addon's **Settings** can bring them back.
 
 Addons come from **repositories**: git repositories that hold addons. Add one by its link
 (`github.com/user/repo` is enough), open it, and install what it offers; rex shows which
