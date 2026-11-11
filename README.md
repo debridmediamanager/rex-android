@@ -39,7 +39,12 @@ explains what else your device needs.
 **Addons** lists what each addon added, when it last synced and any problem. Turn one off,
 sync it now, change its settings, update it or remove it. An addon that needs an account on its website shows
 **Sign in**: go to the page it names and enter the code on screen (on a TV, scan the QR code with
-your phone). rex notices once you did. An update that can reach other websites,
+your phone). rex notices once you did. A Spotify addon shows **Connect Spotify** instead: open
+Spotify on a phone on the same Wi-Fi, play any song, tap the devices button and pick this device by
+its rex name. Pairing needs the device on Wi-Fi or Ethernet; while it waits, the app keeps Wi-Fi
+passing the local announcements Spotify finds it by. An addon that works through another one says
+what that one needs, such as "Sign in to the YouTube addon first", and doesn't sync until then.
+An update that can reach other websites,
 or comes from another repository, asks you first. Titles you delete in a Plex app stay gone;
 the addon's **Settings** can bring them back.
 
