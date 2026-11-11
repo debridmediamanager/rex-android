@@ -103,4 +103,15 @@ class SignInTest {
         // A waiting pairing comes back on screen when the app starts, as a waiting code does.
         assertEquals("spotify", waitingSignIn(HostStatus(addons = listOf(addon)), before))
     }
+
+    @Test fun theMulticastLockIsHeldOnlyWhileSpotifyCanPickThisDevice() {
+        val pairing = addon("spotify-pending")
+        assertTrue(wantsMulticast(HostStatus(addons = listOf(addon("sign-in-none"), pairing)), before))
+        assertFalse("ran out", wantsMulticast(HostStatus(addons = listOf(pairing)), after))
+        assertFalse("connected", wantsMulticast(HostStatus(addons = listOf(addon("spotify-connected"))), before))
+        assertFalse("cancelled", wantsMulticast(HostStatus(addons = listOf(pairing.copy(signIn = pairing.signIn!!.copy(pending = null)))), before))
+        // A code sign-in needs nothing from the local network.
+        assertFalse("code", wantsMulticast(HostStatus(addons = listOf(addon("sign-in-pending"))), before))
+        assertFalse("no host", wantsMulticast(null, before))
+    }
 }

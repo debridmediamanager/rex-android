@@ -82,6 +82,14 @@ fun signedInAs(spotify: Boolean, account: String): String {
     return account.ifBlank { null }?.let { "$verb as $it" } ?: verb
 }
 
+/**
+ * Whether the app holds Wi-Fi's multicast lock: while some addon waits for someone to pick this device
+ * in the Spotify app, which finds it by multicast DNS that Wi-Fi drops otherwise.
+ */
+fun wantsMulticast(host: HostStatus?, now: Long): Boolean = host?.addons.orEmpty().any { addon ->
+    addon.signIn?.let { it.spotify && it.account == null && (it.pending?.expiresAt ?: 0) > now } == true
+}
+
 /** The addon whose code should be on screen when the app starts: one waiting, with nobody signed in yet. */
 fun waitingSignIn(host: HostStatus, now: Long): String? = host.addons.firstOrNull { addon ->
     addon.signIn?.let { it.account == null && (it.pending?.expiresAt ?: 0) > now } == true

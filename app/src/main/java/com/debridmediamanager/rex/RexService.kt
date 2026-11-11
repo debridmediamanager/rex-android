@@ -3,6 +3,7 @@ package com.debridmediamanager.rex
 import android.app.*
 import android.content.*
 import android.content.pm.ServiceInfo
+import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.IBinder
 import android.service.quicksettings.Tile
@@ -30,6 +31,10 @@ class RexService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val commands = Channel<Pair<String?, Int>>(Channel.UNLIMITED)
     private var job: Job? = null
+    // Wi-Fi drops the multicast DNS the Spotify app finds this device by, unless an app holds this.
+    private val multicast by lazy {
+        applicationContext.getSystemService(WifiManager::class.java)?.createMulticastLock("rex spotify pairing")?.apply { setReferenceCounted(false) }
+    }
 
     override fun onCreate() {
         super.onCreate()
@@ -41,6 +46,12 @@ class RexService : Service() {
         scope.launch {
             Status.rex.collect { state ->
                 getSystemService(NotificationManager::class.java).notify(1, notification(listOf(state.phase, state.detail).filter(String::isNotBlank).joinToString(" · ")))
+            }
+        }
+        scope.launch {
+            // At once when a pairing starts or ends, and every few seconds for one that runs out.
+            Status.addons.collectLatest { state ->
+                while (true) { holdMulticast(wantsMulticast(state.host, epochNow())); delay(5_000) }
             }
         }
         scope.launch {
@@ -147,10 +158,19 @@ class RexService : Service() {
             .addAction(0, "Stop", stop).build()
     }
 
+    @Synchronized private fun holdMulticast(hold: Boolean) {
+        val lock = multicast ?: return
+        // A poll that was already running when the service stopped must not take it again.
+        if (hold == lock.isHeld || hold && !scope.isActive) return
+        if (hold) lock.acquire() else lock.release()
+        Logs.add("app", if (hold) "Listening for Spotify on the local network while pairing." else "Stopped listening for Spotify.")
+    }
+
     override fun onBind(intent: Intent?): IBinder? = null
     override fun onDestroy() {
         commands.close()
         scope.cancel()
+        holdMulticast(false)
         stopLeftovers()
         Status.rex.value = RexState()
         Status.addons.value = AddonsState()
