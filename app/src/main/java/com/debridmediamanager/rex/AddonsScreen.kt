@@ -15,10 +15,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-private val client by lazy { AddonsClient() }
+internal val client by lazy { AddonsClient() }
 
 /** Runs an addon call, then reads the host's status again so the screen shows its effect at once. */
-private fun Work.addonCall(done: String, call: () -> Unit) = this {
+internal fun Work.addonCall(done: String, call: () -> Unit) = this {
     call()
     runCatching { Status.addons.value = AddonsState(host = client.status()) }
     done
@@ -52,9 +52,10 @@ fun updateWarning(installedHosts: List<String>?, offeredHosts: List<String>?, in
 
 /**
  * Whether the sync button overrides rex: only after rex refused a sync that would remove more than
- * half of the addon's titles. Any other failure just syncs again.
+ * half of the addon's titles, and never without the account the addon needs. Any other failure just
+ * syncs again.
  */
-fun syncAnyway(addon: Addon) = addon.errorKind == "would_remove"
+fun syncAnyway(addon: Addon) = addon.errorKind == "would_remove" && addon.signIn.let { it == null || it.account != null }
 
 /** An update waiting for a yes, and why it asks. */
 private class PendingUpdate(val name: String, val warning: String, val update: () -> Unit)
@@ -69,6 +70,8 @@ private class PendingUpdate(val name: String, val warning: String, val update: (
     var editing by remember { mutableStateOf<String?>(null) }
     var browsing by remember { mutableStateOf<Repo?>(null) }
     var removing by remember { mutableStateOf<Addon?>(null) }
+    var signingOut by remember { mutableStateOf<Addon?>(null) }
+    val signingIn by openSignIn.collectAsStateWithLifecycle()
     var dropping by remember { mutableStateOf<Repo?>(null) }
     var asking by remember { mutableStateOf<PendingUpdate?>(null) }
     var repos by remember { mutableStateOf<List<Repo>>(emptyList()) }
@@ -79,8 +82,10 @@ private class PendingUpdate(val name: String, val warning: String, val update: (
     }
     // Runs a repository call, then lists the repositories again.
     val repoCall = { done: String, call: () -> Unit -> work.addonCall(done) { call(); repos = client.repos() } }
+    signingIn?.let { id -> SignInScreen(id, work, busy) { openSignIn.value = null }; return }
     editing?.let { id -> AddonSettingsForm(id, work, busy) { editing = null }; return }
     browsing?.let { repo -> RepoScreen(repo, work, busy) { browsing = null }; return }
+    val now = clock()
     ScrollPage {
         Title("Addons", "Addons bring things to watch into rex.")
         if (host == null) Panel { Text(addons.detail.ifBlank { "Start rex to manage addons." }) }
@@ -92,11 +97,19 @@ private class PendingUpdate(val name: String, val warning: String, val update: (
                         style = MaterialTheme.typography.titleLarge)
                     if (addon.description.isNotBlank()) Text(addon.description)
                     Text(addonSummary(addon), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    addon.error?.takeIf { it.isNotBlank() }?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                    val account = accountView(addon, now)
+                    account.line?.let { Text(it, color = MaterialTheme.colorScheme.secondary) }
+                    account.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                     Toggle("Enabled", addon.enabled) { on ->
                         work.addonCall(if (on) "${addon.name} is on." else "${addon.name} is off.") { client.enable(addon.id, on) }
                     }
                     Buttons {
+                        account.signIn?.let { label ->
+                            Action(label, !busy && addon.enabled, primary = true) {
+                                if (account.waiting) openSignIn.value = addon.id
+                                else work { showFresh(client.signIn(addon.id)); openSignIn.value = addon.id; "" }
+                            }
+                        }
                         val repo = addon.repo
                         if (addon.updateAvailable && repo != null) Action("Update", !busy, primary = true) {
                             val update = { work.addonCall("${addon.name} updated.") { client.install(repo, addon.id) } }
@@ -104,11 +117,11 @@ private class PendingUpdate(val name: String, val warning: String, val update: (
                             val warning = updateWarning(addon.hosts, addon.updateHosts, repo, repo, repoName)
                             if (warning == null) update() else asking = PendingUpdate(addon.name, warning, update)
                         }
-                        val force = syncAnyway(addon)
-                        Action(if (force) "Sync anyway" else "Sync now", !busy && addon.enabled && addon.state != "syncing") {
-                            work.addonCall("Syncing ${addon.name}.") { client.sync(addon.id, force = force) }
+                        Action(if (account.force) "Sync anyway" else "Sync now", !busy && addon.enabled && addon.state != "syncing" && account.canSync) {
+                            work.addonCall("Syncing ${addon.name}.") { client.sync(addon.id, force = account.force) }
                         }
                         Action("Settings", !busy) { editing = addon.id }
+                        if (account.signOut) Action("Sign out", !busy) { signingOut = addon }
                         Action("Remove", !busy) { removing = addon }
                     }
                 }
@@ -153,6 +166,12 @@ private class PendingUpdate(val name: String, val warning: String, val update: (
             text = { Text("Its titles leave the Plex apps and its settings are deleted.") },
             confirmButton = { Action("Remove", primary = true) { removing = null; work.addonCall("${addon.name} removed.") { client.remove(addon.id) } } },
             dismissButton = { Action("Cancel") { removing = null } })
+    }
+    signingOut?.let { addon ->
+        AlertDialog(onDismissRequest = { signingOut = null }, title = { Text("Sign out of ${addon.name}?") },
+            text = { Text("Its titles stay, but it stops updating until you sign in again.") },
+            confirmButton = { Action("Sign out", primary = true) { signingOut = null; work.addonCall("Signed out of ${addon.name}.") { client.signOut(addon.id) } } },
+            dismissButton = { Action("Cancel") { signingOut = null } })
     }
     asking?.let { ConfirmUpdate(it) { asking = null } }
     dropping?.let { repo ->

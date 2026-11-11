@@ -37,7 +37,9 @@ explains what else your device needs.
 ## Addons
 
 **Addons** lists what each addon added, when it last synced and any problem. Turn one off,
-sync it now, change its settings, update it or remove it. An update that can reach other websites,
+sync it now, change its settings, update it or remove it. An addon that needs an account on its website shows
+**Sign in**: go to the page it names and enter the code on screen (on a TV, scan the QR code with
+your phone). rex notices once you did. An update that can reach other websites,
 or comes from another repository, asks you first. Titles you delete in a Plex app stay gone;
 the addon's **Settings** can bring them back.
 

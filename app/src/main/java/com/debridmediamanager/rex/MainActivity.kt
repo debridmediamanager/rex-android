@@ -23,6 +23,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.mapNotNull
 
 val LocalTelevision = staticCompositionLocalOf { false }
 private val RexColors = darkColorScheme(primary = Color(0xFFFF8A65), onPrimary = Color(0xFF3B0D00),
@@ -63,6 +65,14 @@ class MainActivity : ComponentActivity() {
             catch (e: Exception) { if (e is CancellationException) throw e; notice = e.message ?: "Something went wrong" }
             finally { busy = false }
         }
+    }
+    // Once per start: a code still waiting for someone to enter it goes back on screen.
+    var resumed by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        if (resumed) return@LaunchedEffect
+        val host = Status.addons.mapNotNull { it.host }.first()
+        resumed = true
+        if (page != "Setup") waitingSignIn(host, epochNow())?.let { openSignIn.value = it; navigate("Addons") }
     }
     val pages = listOf("Status", "Addons", "Settings", "Logs")
     BackHandler(page != "Status" && page != "Setup") { navigate("Status") }
@@ -139,7 +149,9 @@ class MainActivity : ComponentActivity() {
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Text(addon.name, fontWeight = FontWeight.SemiBold)
         Text(addonSummary(addon), color = MaterialTheme.colorScheme.onSurfaceVariant)
-        addon.error?.takeIf { it.isNotBlank() }?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        val account = accountView(addon, epochNow())
+        account.line?.let { Text(it, color = MaterialTheme.colorScheme.secondary) }
+        account.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
     }
 }
 

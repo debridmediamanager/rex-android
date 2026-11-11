@@ -1,0 +1,86 @@
+package com.debridmediamanager.rex
+
+import kotlinx.serialization.json.Json
+import org.junit.Assert.*
+import org.junit.Test
+
+/**
+ * What the app shows for each sign-in state, from host 0.3.0's contract. No host answers it yet: the
+ * fixtures in resources/host/sign-in-*.json and signed-in.json are hand-written from it.
+ */
+class SignInTest {
+    private val json = Json { ignoreUnknownKeys = true }
+    private fun fixture(name: String) = javaClass.getResource("/host/$name.json")!!.readText()
+    private fun addon(name: String) = json.decodeFromString(Addon.serializer(), fixture(name))
+
+    private val expiresAt = 1794330000L
+    private val before = expiresAt - 245
+    private val after = expiresAt
+
+    // A host older than 0.3.0 sends no sign_in at all: such an addon needs no account.
+    @Test fun anOlderHostNeedsNoSignIn() {
+        val addon = json.decodeFromString(HostStatus.serializer(), fixture("status")).addons.single()
+        assertNull(addon.signIn)
+        assertEquals(AccountView(), accountView(addon, before))
+    }
+
+    @Test fun anAddonWithoutAccountsShowsItsOwnError() {
+        val addon = addon("sign-in-none").copy(error = "example.com: connection refused")
+        assertEquals(AccountView(error = "example.com: connection refused"), accountView(addon, before))
+        assertTrue(accountView(addon.copy(errorKind = "would_remove"), before).force)
+    }
+
+    @Test fun nobodySignedInAsksToSignIn() {
+        // The raw "nobody is signed in" gives way to the button that fixes it.
+        assertEquals(AccountView("Sign in to start.", signIn = "Sign in to Example", canSync = false), accountView(addon("sign-in-needed"), before))
+    }
+
+    @Test fun aWaitingCodeReopensUntilItRunsOut() {
+        val addon = addon("sign-in-pending")
+        assertEquals(AccountView("Waiting for you to enter the code…", signIn = "Enter the code", waiting = true, canSync = false),
+            accountView(addon, before))
+        assertEquals(AccountView("The code ran out.", signIn = "Get a new code", canSync = false), accountView(addon, after))
+    }
+
+    @Test fun signedInOffersSignOut() {
+        val addon = addon("signed-in")
+        assertEquals(AccountView("Signed in as film.fan@example.com", signOut = true), accountView(addon, before))
+        // Rex's removal guard can still be overridden once someone is signed in.
+        assertTrue(accountView(addon.copy(errorKind = "would_remove", error = "rex refused"), before).force)
+        assertEquals("Signed in", accountView(addon.copy(signIn = SignIn(account = "")), before).line)
+    }
+
+    @Test fun aFailedSignInSaysWhatWentWrong() {
+        assertEquals(AccountView("Sign in to start.", "That didn't work: the code was denied", "Sign in", canSync = false),
+            accountView(addon("sign-in-failed"), before))
+        // Another problem than the missing account still shows.
+        val offline = addon("sign-in-needed").copy(error = "example.com: connection refused", errorKind = null)
+        assertEquals("example.com: connection refused", accountView(offline, before).error)
+    }
+
+    @Test fun neverForceASyncWithoutAnAccount() {
+        for (name in listOf("sign-in-needed", "sign-in-pending", "sign-in-failed")) {
+            val addon = addon(name).copy(errorKind = "would_remove")
+            assertFalse(name, syncAnyway(addon))
+            assertFalse(name, accountView(addon, before).force)
+            assertFalse(name, accountView(addon, before).canSync)
+        }
+    }
+
+    @Test fun theAppReopensOnlyALiveCode() {
+        val host = HostStatus(addons = listOf(addon("signed-in"), addon("sign-in-needed"), addon("sign-in-pending").copy(id = "waiting")))
+        assertEquals("waiting", waitingSignIn(host, before))
+        assertNull(waitingSignIn(host, after))
+        // A code left over while someone is signed in already is not worth showing.
+        val signedIn = addon("signed-in")
+        assertNull(waitingSignIn(HostStatus(addons = listOf(signedIn.copy(signIn = signedIn.signIn!!.copy(pending = PendingSignIn("X", "u", after))))), before))
+    }
+
+    @Test fun theCountdownReadsAsMinutes() {
+        assertEquals("4:05", countdown(245))
+        assertEquals("0:09", countdown(9))
+        assertEquals("15:00", countdown(900))
+        assertEquals("0:00", countdown(-3))
+    }
+
+}
