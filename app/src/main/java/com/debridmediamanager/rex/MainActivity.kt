@@ -139,19 +139,19 @@ class MainActivity : ComponentActivity() {
             val host = addons.host
             if (host == null) Text(addons.detail.ifBlank { "Addons start with rex." })
             else if (host.addons.isEmpty()) Text("No addons yet.")
-            else host.addons.forEach { AddonLine(it) }
+            else host.addons.forEach { AddonLine(it, host.addons) }
             Action("Manage addons") { navigate("Addons") }
         }
     }
 }
 
-@Composable fun AddonLine(addon: Addon) {
+@Composable fun AddonLine(addon: Addon, installed: List<Addon>) {
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Text(addon.name, fontWeight = FontWeight.SemiBold)
         Text(addonSummary(addon), color = MaterialTheme.colorScheme.onSurfaceVariant)
         val account = accountView(addon, epochNow())
         account.line?.let { Text(it, color = MaterialTheme.colorScheme.secondary) }
-        account.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        (unmetNeed(addon, installed) ?: account.error)?.let { Text(it, color = MaterialTheme.colorScheme.error) }
     }
 }
 

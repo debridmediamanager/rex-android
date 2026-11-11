@@ -114,4 +114,20 @@ class SignInTest {
         assertFalse("code", wantsMulticast(HostStatus(addons = listOf(addon("sign-in-pending"))), before))
         assertFalse("no host", wantsMulticast(null, before))
     }
+
+    @Test fun anUnmetRequirementSaysWhatToDoInOneLine() {
+        val host = json.decodeFromString(HostStatus.serializer(), fixture("status-requires"))
+        val (youtube, spotify, lyrics) = host.addons
+        assertNull(unmetNeed(youtube, host.addons))
+        assertEquals("Sign in to the YouTube addon first.", unmetNeed(spotify, host.addons))
+        // The first unmet one is enough.
+        assertEquals("Sign in to the YouTube addon first.", unmetNeed(lyrics, host.addons))
+        val need = { reason: String? -> unmetNeed(Addon("x", requires = listOf(Requirement("youtube", true), Requirement("youtube", false, reason))), host.addons) }
+        assertEquals("Needs the YouTube addon turned on.", need("disabled"))
+        assertEquals("Needs the YouTube addon: install it and sign in.", need("not installed"))
+        assertEquals("Needs the YouTube addon.", need(null))
+        // Not installed, so only its id names it.
+        assertEquals("Needs the Youtube addon: install it and sign in.", unmetNeed(spotify.copy(requires = listOf(Requirement("youtube", false, "not installed"))), emptyList()))
+        assertNull(unmetNeed(addon("spotify-connected"), host.addons))
+    }
 }

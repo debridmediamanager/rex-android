@@ -57,6 +57,21 @@ fun updateWarning(installedHosts: List<String>?, offeredHosts: List<String>?, in
  */
 fun syncAnyway(addon: Addon) = addon.errorKind == "would_remove" && addon.signIn.let { it == null || it.account != null }
 
+/**
+ * What another addon has to do before this one works, for the first requirement not met; null when
+ * all are. Named as installed, else by its id.
+ */
+fun unmetNeed(addon: Addon, installed: List<Addon>): String? {
+    val need = addon.requires.firstOrNull { !it.ok } ?: return null
+    val name = installed.firstOrNull { it.id == need.id }?.name?.ifBlank { null } ?: need.id.replaceFirstChar(Char::uppercaseChar)
+    return when (need.reason) {
+        "not installed" -> "Needs the $name addon: install it and sign in."
+        "disabled" -> "Needs the $name addon turned on."
+        "sign in needed" -> "Sign in to the $name addon first."
+        else -> "Needs the $name addon."
+    }
+}
+
 /** An update waiting for a yes, and why it asks. */
 private class PendingUpdate(val name: String, val warning: String, val update: () -> Unit)
 
@@ -98,8 +113,9 @@ private class PendingUpdate(val name: String, val warning: String, val update: (
                     if (addon.description.isNotBlank()) Text(addon.description)
                     Text(addonSummary(addon), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     val account = accountView(addon, now)
+                    val need = unmetNeed(addon, host.addons)
                     account.line?.let { Text(it, color = MaterialTheme.colorScheme.secondary) }
-                    account.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                    (need ?: account.error)?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                     Toggle("Enabled", addon.enabled) { on ->
                         work.addonCall(if (on) "${addon.name} is on." else "${addon.name} is off.") { client.enable(addon.id, on) }
                     }
@@ -117,7 +133,7 @@ private class PendingUpdate(val name: String, val warning: String, val update: (
                             val warning = updateWarning(addon.hosts, addon.updateHosts, repo, repo, repoName)
                             if (warning == null) update() else asking = PendingUpdate(addon.name, warning, update)
                         }
-                        Action(if (account.force) "Sync anyway" else "Sync now", !busy && addon.enabled && addon.state != "syncing" && account.canSync) {
+                        Action(if (account.force) "Sync anyway" else "Sync now", !busy && addon.enabled && addon.state != "syncing" && account.canSync && need == null) {
                             work.addonCall("Syncing ${addon.name}.") { client.sync(addon.id, force = account.force) }
                         }
                         Action("Settings", !busy) { editing = addon.id }
