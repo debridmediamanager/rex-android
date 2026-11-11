@@ -121,7 +121,7 @@ private class PendingUpdate(val name: String, val warning: String, val update: (
                             work.addonCall("Syncing ${addon.name}.") { client.sync(addon.id, force = account.force) }
                         }
                         Action("Settings", !busy) { editing = addon.id }
-                        if (account.signOut) Action("Sign out", !busy) { signingOut = addon }
+                        if (account.signOut) Action(if (addon.signIn?.spotify == true) "Disconnect" else "Sign out", !busy) { signingOut = addon }
                         Action("Remove", !busy) { removing = addon }
                     }
                 }
@@ -168,9 +168,13 @@ private class PendingUpdate(val name: String, val warning: String, val update: (
             dismissButton = { Action("Cancel") { removing = null } })
     }
     signingOut?.let { addon ->
-        AlertDialog(onDismissRequest = { signingOut = null }, title = { Text("Sign out of ${addon.name}?") },
-            text = { Text("Its titles stay, but it stops updating until you sign in again.") },
-            confirmButton = { Action("Sign out", primary = true) { signingOut = null; work.addonCall("Signed out of ${addon.name}.") { client.signOut(addon.id) } } },
+        val spotify = addon.signIn?.spotify == true
+        AlertDialog(onDismissRequest = { signingOut = null }, title = { Text(if (spotify) "Disconnect ${addon.name}?" else "Sign out of ${addon.name}?") },
+            text = { Text("Its titles stay, but it stops updating until you ${if (spotify) "connect" else "sign in"} again.") },
+            confirmButton = { Action(if (spotify) "Disconnect" else "Sign out", primary = true) {
+                signingOut = null
+                work.addonCall(if (spotify) "Disconnected ${addon.name}." else "Signed out of ${addon.name}.") { client.signOut(addon.id) }
+            } },
             dismissButton = { Action("Cancel") { signingOut = null } })
     }
     asking?.let { ConfirmUpdate(it) { asking = null } }

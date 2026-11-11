@@ -89,4 +89,18 @@ class SignInTest {
         assertEquals("0:00", countdown(-3))
     }
 
+
+    // Host 0.5.0's Spotify pairing: no code, a device to pick in the Spotify app. Hand-written fixtures.
+    @Test fun aSpotifyPairingSaysPickItInSpotify() {
+        val addon = addon("spotify-pending")
+        assertEquals(AccountView("Waiting for you to pick it in Spotify…", signIn = "Connect Spotify", waiting = true, canSync = false),
+            accountView(addon, before))
+        assertEquals(AccountView("Spotify didn't see a pick in time.", signIn = "Try again", canSync = false), accountView(addon, after))
+        val idle = addon.copy(signIn = addon.signIn!!.copy(pending = null), error = null)
+        assertEquals(AccountView("Connect to start.", signIn = "Connect Spotify", canSync = false), accountView(idle, before))
+        assertEquals(AccountView("Connected as music.fan", signOut = true), accountView(addon("spotify-connected"), before))
+        assertEquals("Connected", signedInAs(true, ""))
+        // A waiting pairing comes back on screen when the app starts, as a waiting code does.
+        assertEquals("spotify", waitingSignIn(HostStatus(addons = listOf(addon)), before))
+    }
 }
