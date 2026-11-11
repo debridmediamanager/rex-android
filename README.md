@@ -53,11 +53,21 @@ with no repository and only the bundled Internet Archive addon.
 
 **Logs** shows what rex and the addons said lately, with tokens, keys and passwords hidden.
 
+## Getting help
+
+Ask in the support thread on Discord. If we ask for logs, open **Logs** and press **Send logs
+to support**. You see everything that would go before anything is sent: a few facts about the
+device and rex, what your addons are doing, and the logs of this run and the one before. Keys,
+tokens, passwords and the end of your public IP address are hidden. Press **Send** and you get a
+code; post it in your thread. Only the support team can read what you sent, and it's deleted
+after 7 days.
+
 ## What the app sends where
 
 plex.tv for the sign-in and as any Plex server reports itself; once signed in, rex-direct on
 debridmediamanager.com, which gives rex an HTTPS address for the Plex apps away from home; and
-each addon's own sites. Nothing else. See [the privacy policy](play/privacy-policy.md).
+each addon's own sites; and logs.debridmediamanager.com, only when you press Send under Send logs
+to support. Nothing else. See [the privacy policy](play/privacy-policy.md).
 
 ## Build
 
