@@ -43,13 +43,26 @@ object AddonsToken {
     val hosts: List<String> = emptyList(), @SerialName("update_hosts") val updateHosts: List<String>? = null,
     /** Null for an addon that needs no account, and from a host older than 0.3.0. */
     @SerialName("sign_in") val signIn: SignIn? = null,
+    /** Other addons this one works through (host 0.5.0); empty from older hosts. */
+    val requires: List<Requirement> = emptyList(),
 )
 /** The addon's account on its website. The host watches for the code itself; the app only reads this. */
 @Serializable data class SignIn(
     val label: String? = null, val account: String? = null, val pending: PendingSignIn? = null, val error: String? = null,
+    /** "code", or "spotify" for Spotify Connect pairing (host 0.5.0); hosts before that send none, meaning "code". */
+    val kind: String? = null,
+) {
+    val spotify: Boolean get() = kind == "spotify"
+}
+/**
+ * A code to enter at [url] before [expiresAt] (Unix seconds); for Spotify, the [device] name to pick in
+ * the Spotify app's device list, with no code or url.
+ */
+@Serializable data class PendingSignIn(
+    val code: String = "", val url: String = "", @SerialName("expires_at") val expiresAt: Long, val device: String? = null,
 )
-/** A code to enter at [url] before [expiresAt] (Unix seconds). */
-@Serializable data class PendingSignIn(val code: String, val url: String, @SerialName("expires_at") val expiresAt: Long)
+/** Another addon this one needs, and why it isn't usable yet: "not installed", "disabled" or "sign in needed". */
+@Serializable data class Requirement(val id: String, val ok: Boolean = true, val reason: String? = null)
 /** A git repository addons are installed from. */
 @Serializable data class Repo(
     val id: String, val url: String, val name: String = "", val description: String = "", val commit: String? = null,
@@ -98,7 +111,7 @@ class AddonsClient(
     fun status(): HostStatus = json.decodeFromString(call("GET", url("api", "status")))
 
     fun addon(id: String): Addon = json.decodeFromString(call("GET", url("api", "addons", id)))
-    /** Starts (or restarts) a sign-in; the answer carries the code in `sign_in.pending`. */
+    /** Starts (or restarts) a sign-in; the answer carries the code, or the Spotify device name, in `sign_in.pending`. */
     fun signIn(id: String): Addon = json.decodeFromString(call("POST", url("api", "addons", id, "sign-in"), JsonObject(emptyMap())))
     /** Signs out, or drops a code nobody entered. */
     fun signOut(id: String): Addon = json.decodeFromString(call("DELETE", url("api", "addons", id, "sign-in")))

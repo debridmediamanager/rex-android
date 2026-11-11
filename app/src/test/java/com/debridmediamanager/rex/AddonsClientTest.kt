@@ -264,4 +264,37 @@ class AddonsClientTest {
             assertEquals(reason, failure.message)
         }
     }
+
+    // Host 0.5.0's Spotify pairing and requirements. No host answers them yet: the fixtures are hand-written.
+    @Test fun aSpotifyPairingCarriesTheDeviceNameAndNoCode() {
+        server.enqueue(MockResponse().setBody(fixture("spotify-pending.json")))
+        val pairing = client.signIn("spotify").signIn!!
+        assertEquals("POST /api/addons/spotify/sign-in", server.takeRequest().let { "${it.method} ${it.path}" })
+        assertTrue(pairing.spotify)
+        assertEquals(PendingSignIn(expiresAt = 1794330000, device = "Pixel 6"), pairing.pending)
+        assertEquals("music.fan", addon("spotify-connected").signIn?.account)
+        assertEquals(listOf(Requirement("youtube", ok = true)), addon("spotify-connected").requires)
+    }
+
+    // Before 0.5.0 a sign-in has no kind (a code) and an addon needs no other addon.
+    @Test fun olderHostsMeanACodeAndNoRequirements() {
+        for (name in listOf("sign-in-pending", "signed-in", "sign-in-needed")) {
+            val addon = addon(name)
+            assertNull(name, addon.signIn?.kind)
+            assertFalse(name, addon.signIn!!.spotify)
+            assertEquals(name, emptyList<Requirement>(), addon.requires)
+        }
+        server.enqueue(MockResponse().setBody(fixture("status.json")))
+        assertEquals(emptyList<Requirement>(), client.status().addons.single().requires)
+    }
+
+    @Test fun statusReadsEachAddonsRequirements() {
+        server.enqueue(MockResponse().setBody(fixture("status-requires.json")))
+        val (youtube, spotify, lyrics) = client.status().addons
+        assertEquals("code", youtube.signIn?.kind)
+        assertEquals(emptyList<Requirement>(), youtube.requires)
+        assertTrue(spotify.signIn!!.spotify)
+        assertEquals(listOf(Requirement("youtube", ok = false, reason = "sign in needed")), spotify.requires)
+        assertEquals(listOf("sign in needed", "not installed"), lyrics.requires.map { it.reason })
+    }
 }

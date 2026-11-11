@@ -1,0 +1,9 @@
+{
+    "_comment": "Hand-written from the host 0.5.0 contract (Spotify Connect pairing, requires); no host answers it yet. Replace with a recorded answer once one does.",
+    "id": "spotify", "name": "Spotify", "version": "1.0.0", "description": "Your Spotify playlists, played from YouTube.", "enabled": true, "repo": "rex-addons", "update_available": false, "hosts": ["*.spotify.com", "*.spclient.spotify.com"],
+    "state": "error", "items": 0, "held": 0, "last_sync": null,
+    "error": "spotify: nobody is signed in", "error_kind": "sign_in",
+    "sign_in": {"kind": "spotify", "label": "Connect Spotify", "account": null,
+        "pending": {"device": "Pixel 6", "expires_at": 1794330000}, "error": null},
+    "requires": [{"id": "youtube", "ok": true, "reason": null}]
+}

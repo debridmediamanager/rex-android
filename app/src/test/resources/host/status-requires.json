@@ -1,0 +1,20 @@
+{
+    "_comment": "Hand-written from the host 0.5.0 contract (Spotify Connect pairing, requires); no host answers it yet. Replace with a recorded answer once one does.",
+    "version": "0.5.0",
+    "rex": {"url": "http://127.0.0.1:32400", "reachable": true},
+    "addons": [
+        {"id": "youtube", "name": "YouTube", "version": "1.1.0", "description": "", "enabled": true, "state": "error", "items": 0, "held": 0,
+         "last_sync": null, "error": "youtube: nobody is signed in", "error_kind": "sign_in", "repo": "rex-addons", "update_available": false,
+         "hosts": ["*.youtube.com", "*.googlevideo.com"],
+         "sign_in": {"kind": "code", "label": "Sign in to YouTube", "account": null, "pending": null, "error": null}, "requires": []},
+        {"id": "spotify", "name": "Spotify", "version": "1.0.0", "description": "", "enabled": true, "state": "error", "items": 0, "held": 0,
+         "last_sync": null, "error": "spotify: the youtube addon is not usable", "error_kind": null, "repo": "rex-addons", "update_available": false,
+         "hosts": ["*.spotify.com"],
+         "sign_in": {"kind": "spotify", "label": "Connect Spotify", "account": "music.fan", "pending": null, "error": null},
+         "requires": [{"id": "youtube", "ok": false, "reason": "sign in needed"}]},
+        {"id": "lyrics", "name": "Lyrics", "version": "1.0.0", "description": "", "enabled": true, "state": "error", "items": 0, "held": 0,
+         "last_sync": null, "error": "lyrics: the lrclib addon is not usable", "error_kind": null, "repo": "rex-addons", "update_available": false,
+         "hosts": [], "sign_in": null,
+         "requires": [{"id": "youtube", "ok": false, "reason": "sign in needed"}, {"id": "lrclib", "ok": false, "reason": "not installed"}]}
+    ]
+}
