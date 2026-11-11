@@ -39,7 +39,9 @@ jobs:
           echo "REX_ANDROID_VERSION_CODE=$((major * 1000000 + minor * 1000 + patch))" >> "$GITHUB_ENV"
       - name: Toolchains
         run: |
-          sudo apt-get update -q && sudo apt-get install -y -q nasm
+          sudo apt-get update -q && sudo apt-get install -y -q nasm libclang-dev
+          # The addon host's QuickJS bindings are generated with libclang, and the Linux NDK ships none bindgen can load.
+          echo "LIBCLANG_PATH=$(dirname "$(find /usr/lib -name 'libclang.so*' | sort | head -1)")" >> "$GITHUB_ENV"
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "ndk;28.2.13676358" "build-tools;36.0.0" "platforms;android-36" > /dev/null
           rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android
       - uses: actions/cache@v4
