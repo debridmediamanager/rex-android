@@ -81,7 +81,7 @@ class RedactionTest {
         repeat(510) { Logs.add("rex", "line $it token=t$it") }
         val lines = Logs.all()
         assertEquals(500, lines.size)
-        assertEquals("rex: line 509 token=[hidden]", lines.last())
+        assertTrue(lines.last(), Regex("""\d\d-\d\d \d\d:\d\d:\d\d rex: line 509 token=\[hidden]""").matches(lines.last()))
         assertTrue(lines.none { it.contains("token=t") })
     }
 }

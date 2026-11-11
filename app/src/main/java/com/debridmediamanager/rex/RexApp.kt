@@ -18,6 +18,10 @@ const val DEFAULT_PORT = 32400
 
 class RexApp : Application() {
     val runtime by lazy { Runtime(this) }
+    override fun onCreate() {
+        super.onCreate()
+        Logs.persistTo(File(filesDir, "logs"))
+    }
 }
 val Context.runtime get() = (applicationContext as RexApp).runtime
 

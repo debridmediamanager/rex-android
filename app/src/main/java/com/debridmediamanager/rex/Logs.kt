@@ -1,14 +1,120 @@
 package com.debridmediamanager.rex
 
-/** The last lines rex, the addon host and the app said, with secrets hidden as they arrive. */
+import java.io.BufferedWriter
+import java.io.File
+import java.io.FileWriter
+import java.io.Writer
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.TimeUnit
+import kotlin.concurrent.thread
+
+/**
+ * The last lines rex, the addon host and the app said, with secrets hidden as they arrive. Once
+ * [persistTo] is called they also go to app storage, so a crash or a reboot keeps them.
+ */
 object Logs {
     private val lines = ArrayDeque<String>()
+    @Volatile private var store: LogStore? = null
+    private val stamp = SimpleDateFormat("MM-dd HH:mm:ss", Locale.US)
+
     @Synchronized fun add(source: String, line: String) {
         val token = AddonsToken.current
-        lines.addLast("$source: ${redact(if (token == null) line else line.replace(token, HIDDEN))}")
+        val text = "${stamp.format(Date())} $source: ${redact(if (token == null) line else line.replace(token, HIDDEN))}"
+        lines.addLast(text)
         while (lines.size > 500) lines.removeFirst()
+        store?.add(text)
     }
     @Synchronized fun all(): List<String> = lines.toList()
+
+    /** Keeps this run's lines in [directory] from now on; the last run's become the previous run. */
+    @Synchronized fun persistTo(directory: File) { if (store == null) store = LogStore(directory).also { it.start() } }
+
+    /** This run's lines, or the previous run's, as kept on disk ("" before [persistTo]). */
+    fun run(previous: Boolean): String = store?.read(previous).orEmpty()
+}
+
+/**
+ * This run's and the previous run's log lines in app storage, each up to about [maxLines] lines
+ * or [maxBytes] bytes, newest kept. Lines are written by a thread of its own, a burst at a time,
+ * so callers never wait on storage and flash is not written line by line.
+ */
+class LogStore(private val directory: File, private val maxLines: Int = 2_000, private val maxBytes: Long = 1_000_000) {
+    // A run is two halves: when the current half is full it becomes the older one.
+    private fun file(run: String, half: Int) = File(directory, if (half == 0) "$run.log" else "$run.1.log")
+    // Lines, and the latches read() waits on until every line queued before it is written.
+    private val queue = LinkedBlockingQueue<Any>(10_000)
+    private var writer: Writer? = null
+    private var lines = 0
+    private var bytes = 0L
+
+    /** Moves the last run's lines aside as the previous run, then writes this run's as they come. */
+    fun start() {
+        rotate()
+        thread(isDaemon = true, name = "rex-logs") {
+            while (true) {
+                val batch = mutableListOf(queue.take()).also { queue.drainTo(it) }
+                synchronized(this) { write(batch.filterIsInstance<String>()) }
+                batch.filterIsInstance<CountDownLatch>().forEach(CountDownLatch::countDown)
+            }
+        }
+    }
+
+    /** Queues a line; dropped only when storage falls 10,000 lines behind. */
+    fun add(line: String) { queue.offer(line) }
+
+    @Synchronized fun rotate() {
+        directory.mkdirs()
+        // A run that wrote nothing (the app opened and closed) leaves the previous one in place.
+        if (file("current", 0).length() + file("current", 1).length() == 0L) return
+        for (half in 0..1) file("previous", half).delete()
+        for (half in 0..1) file("current", half).takeIf { it.exists() }?.renameTo(file("previous", half))
+    }
+
+    /** Writes a burst of lines, then flushes once. */
+    private fun write(batch: List<String>) {
+        if (batch.isEmpty()) return
+        runCatching {
+            for (line in batch) {
+                val size = line.toByteArray().size + 1L
+                if (writer == null || lines >= maxLines / 2 || bytes + size > maxBytes / 2) roll()
+                writer!!.write(line); writer!!.write("\n")
+                lines++; bytes += size
+            }
+            writer?.flush()
+        }.onFailure { writer = null }
+    }
+
+    private fun roll() {
+        runCatching { writer?.close() }
+        val current = file("current", 0)
+        if (current.length() > 0) { file("current", 1).delete(); current.renameTo(file("current", 1)) }
+        directory.mkdirs()
+        writer = BufferedWriter(FileWriter(current, true), 16 * 1024)
+        lines = 0; bytes = 0
+    }
+
+    /** A run's lines, oldest first, cut to the newest [maxLines] and [maxBytes]. */
+    fun read(previous: Boolean): String {
+        if (!previous) CountDownLatch(1).also { queue.put(it) }.await(5, TimeUnit.SECONDS)
+        return synchronized(this) { readRun(previous) }
+    }
+
+    private fun readRun(previous: Boolean): String {
+        val run = if (previous) "previous" else "current"
+        val all = (1 downTo 0).flatMap { half -> file(run, half).takeIf { it.exists() }?.readLines().orEmpty() }
+        val kept = ArrayDeque<String>()
+        var size = 0L
+        for (line in all.asReversed()) {
+            size += line.toByteArray().size + 1
+            if (kept.size >= maxLines || size > maxBytes) break
+            kept.addFirst(line)
+        }
+        return kept.joinToString("\n")
+    }
 }
 
 private const val HIDDEN = "[hidden]"
