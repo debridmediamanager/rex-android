@@ -183,7 +183,7 @@ fun onLocalNetwork(context: Context): Boolean {
                             lineHeight = 32.sp, fontWeight = FontWeight.SemiBold)
                         Text("and enter", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         // Across a room on a TV; on a phone it still has to fit the width.
-                        val big = if (television) 64.sp else 40.sp
+                        val big = if (television) 64.sp else 34.sp
                         Text(pending.code, color = MaterialTheme.colorScheme.primary, fontSize = big, lineHeight = big * 1.15f,
                             fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace, letterSpacing = 4.sp)
                     }
