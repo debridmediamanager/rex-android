@@ -37,6 +37,21 @@ class SupportClientTest {
         assertEquals("The addon host is not running.", addonsReport(null, ""))
     }
 
+    // Support learns whether an addon is signed in, never as whom and never the code.
+    @Test fun theReportSaysOnlyWhetherAnAddonIsSignedIn() {
+        val pending = PendingSignIn("ABCD-EFGH", "https://example.com/device", 1794330000)
+        val report = addonsReport(HostStatus(addons = listOf(
+            Addon("signed", signIn = SignIn("Sign in to Example", account = "film.fan@example.com")),
+            Addon("waiting", signIn = SignIn(pending = pending)),
+            Addon("free"))), "")
+        assertTrue(report, report.contains("signed\n  repository: built into the app\n  enabled: true\n  state: idle\n  titles: 0, held: 0\n  last sync: never\n  signed in: yes"))
+        assertTrue(report, report.contains("waiting\n  repository: built into the app\n  enabled: true\n  state: idle\n  titles: 0, held: 0\n  last sync: never\n  signed in: no"))
+        assertTrue(report, report.endsWith("free\n  repository: built into the app\n  enabled: true\n  state: idle\n  titles: 0, held: 0\n  last sync: never\n  signed in: not needed"))
+        assertFalse(report, report.contains("film.fan"))
+        assertFalse(report, report.contains("ABCD"))
+        assertFalse(report, report.contains("example.com"))
+    }
+
     @Test fun sendPostsGzippedJsonAndReadsTheCode() {
         server.enqueue(MockResponse().setResponseCode(201)
             .setBody("""{"code":"K7QM3XPD","display":"K7QM-3XPD","expires_at":"2026-11-18T10:00:02Z","ttl_days":7}"""))
