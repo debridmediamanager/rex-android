@@ -1,3 +1,6 @@
+<!-- rex's logo mark (rex docs/images/logo.svg), on the icon's black background. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-    <path android:fillColor="#FF8A65" android:pathData="M30,44h6v20h-6z M36,44h9v5h-9z M47,44h16v4h-16z M47,44h4v20h-4z M47,52h16v4h-16z M59,44h4v12h-4z M47,60h16v4h-16z M66,44h5l4.5,7 4.5,-7h5l-7,10 7,10h-5l-4.5,-7 -4.5,7h-5l7,-10z" />
+    <group android:scaleX="1.8" android:scaleY="1.8" android:translateX="25.2" android:translateY="22.5">
+        <path android:fillColor="#FF9A62" android:pathData="M14 6h10v1h-10zM10 7h16v1h-16zM8 8h11v1h-11zM22 8h5v1h-5zM8 9h11v1h-11zM22 9h6v1h-6zM7 10h21v1h-21zM7 11h21v1h-21zM6 12h22v1h-22zM6 13h21v1h-21zM6 14h12v1h-12zM20 14h1v1h-1zM23 14h1v1h-1zM25 14h1v1h-1zM6 15h10v1h-10zM6 16h8v1h-8zM5 17h8v1h-8zM18 17h8v1h-8zM5 18h7v1h-7zM15 18h11v1h-11zM5 19h7v1h-7zM14 19h10v1h-10zM5 20h7v1h-7zM14 20h7v1h-7zM5 21h8v1h-8zM14 21h4v1h-4zM5 22h8v1h-8zM14 22h1v1h-1zM5 23h8v1h-8zM5 24h8v1h-8zM4 25h14v1h-14zM4 26h14v1h-14zM4 27h10v1h-10zM17 27h1v1h-1zM4 28h10v1h-10z" />
+    </group>
 </vector>

@@ -4,5 +4,5 @@
         <item name="android:colorAccent">#FF8A65</item>
         <item name="android:windowBackground">#131418</item>
     </style>
-    <color name="icon_background">#131418</color>
+    <color name="icon_background">#000000</color>
 </resources>
