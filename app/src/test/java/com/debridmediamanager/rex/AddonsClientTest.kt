@@ -32,6 +32,8 @@ class AddonsClientTest {
         assertNull(addon.error)
         assertEquals(listOf("archive.org", "*.archive.org"), addon.hosts)
         assertNull(addon.updateHosts)
+        // Hosts before 0.3.0 send no sign_in: such an addon needs no account.
+        assertNull(addon.signIn)
     }
 
     @Test fun statusKeepsWhatAFailingAddonSaysAndIgnoresNewFields() {
@@ -225,5 +227,41 @@ class AddonsClientTest {
         assertEquals(refusal, failure.message)
         server.enqueue(MockResponse().setResponseCode(502).setBody("<html>bad gateway</html>"))
         assertEquals("The addon host answered 502", assertThrows(ApiFailure::class.java) { client.sync("a") }.message)
+    }
+
+    // Host 0.3.0's sign-in contract. No host answers it yet: these fixtures are hand-written from it.
+    private fun addon(name: String): Addon {
+        server.enqueue(MockResponse().setBody(fixture("$name.json")))
+        return client.addon("example").also { assertEquals("GET /api/addons/example", server.takeRequest().let { "${it.method} ${it.path}" }) }
+    }
+
+    @Test fun eachSignInShapeReads() {
+        val expiresAt = 1794330000L
+        assertNull(addon("sign-in-none").signIn)
+        assertEquals(SignIn(label = "Sign in to Example"), addon("sign-in-needed").signIn)
+        assertEquals(SignIn("Sign in to Example", pending = PendingSignIn("ABCD-EFGH", "https://example.com/device", expiresAt)),
+            addon("sign-in-pending").signIn)
+        assertEquals("film.fan@example.com", addon("signed-in").signIn?.account)
+        assertEquals(SignIn(error = "the code was denied"), addon("sign-in-failed").signIn)
+    }
+
+    @Test fun signingInAndOutSendTheContractsRequests() {
+        server.enqueue(MockResponse().setBody(fixture("sign-in-pending.json")))
+        server.enqueue(MockResponse().setBody(fixture("sign-in-needed.json")))
+        assertEquals("ABCD-EFGH", client.signIn("example").signIn?.pending?.code)
+        assertNull(client.signOut("example").signIn?.pending)
+        val (start, stop) = List(2) { server.takeRequest() }
+        assertEquals("POST /api/addons/example/sign-in", "${start.method} ${start.path}")
+        assertEquals(JsonObject(emptyMap()), Json.parseToJsonElement(start.body.readUtf8()))
+        assertEquals("DELETE /api/addons/example/sign-in", "${stop.method} ${stop.path}")
+    }
+
+    @Test fun signInRefusalsSayWhy() {
+        for ((status, reason) in listOf(400 to "example needs no sign-in", 409 to "example is turned off", 502 to "example.com: device code refused")) {
+            server.enqueue(MockResponse().setResponseCode(status).setBody("""{"error":"$reason"}"""))
+            val failure = assertThrows(ApiFailure::class.java) { client.signIn("example") }
+            assertEquals(status, failure.status)
+            assertEquals(reason, failure.message)
+        }
     }
 }

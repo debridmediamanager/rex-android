@@ -33,12 +33,23 @@ object AddonsToken {
     val id: String, val name: String = id, val version: String = "", val description: String = "",
     val enabled: Boolean = true, val state: String = "idle", val items: Long = 0, val held: Long = 0,
     @SerialName("last_sync") val lastSync: Long? = null, val error: String? = null,
-    /** "would_remove" when rex refused the last sync for removing more than half of the titles. */
+    /**
+     * "would_remove" when rex refused the last sync for removing more than half of the titles;
+     * "sign_in" when it isn't syncing because nobody is signed in (or the website signed it out).
+     */
     @SerialName("error_kind") val errorKind: String? = null,
     val repo: String? = null, @SerialName("update_available") val updateAvailable: Boolean = false,
     /** The websites the installed copy can reach, and those the offered update could. */
     val hosts: List<String> = emptyList(), @SerialName("update_hosts") val updateHosts: List<String>? = null,
+    /** Null for an addon that needs no account, and from a host older than 0.3.0. */
+    @SerialName("sign_in") val signIn: SignIn? = null,
 )
+/** The addon's account on its website. The host watches for the code itself; the app only reads this. */
+@Serializable data class SignIn(
+    val label: String? = null, val account: String? = null, val pending: PendingSignIn? = null, val error: String? = null,
+)
+/** A code to enter at [url] before [expiresAt] (Unix seconds). */
+@Serializable data class PendingSignIn(val code: String, val url: String, @SerialName("expires_at") val expiresAt: Long)
 /** A git repository addons are installed from. */
 @Serializable data class Repo(
     val id: String, val url: String, val name: String = "", val description: String = "", val commit: String? = null,
@@ -85,6 +96,12 @@ class AddonsClient(
     private val patient by lazy { http.newBuilder().readTimeout(120, TimeUnit.SECONDS).build() }
 
     fun status(): HostStatus = json.decodeFromString(call("GET", url("api", "status")))
+
+    fun addon(id: String): Addon = json.decodeFromString(call("GET", url("api", "addons", id)))
+    /** Starts (or restarts) a sign-in; the answer carries the code in `sign_in.pending`. */
+    fun signIn(id: String): Addon = json.decodeFromString(call("POST", url("api", "addons", id, "sign-in"), JsonObject(emptyMap())))
+    /** Signs out, or drops a code nobody entered. */
+    fun signOut(id: String): Addon = json.decodeFromString(call("DELETE", url("api", "addons", id, "sign-in")))
 
     fun settings(id: String): AddonSettings {
         val answer = json.parseToJsonElement(call("GET", url("api", "addons", id))).jsonObject

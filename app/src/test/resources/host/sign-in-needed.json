@@ -1,0 +1,7 @@
+{
+    "_comment": "Hand-written from the host 0.3.0 sign-in contract; no host answers it yet. Replace with a recorded answer once one does.",
+    "id": "example", "name": "Example", "version": "1.0.0", "description": "Lists from example.com.", "enabled": true, "repo": "rex-addons", "update_available": false, "hosts": ["example.com"],
+    "state": "error", "items": 0, "held": 0, "last_sync": null,
+    "error": "example: nobody is signed in", "error_kind": "sign_in",
+    "sign_in": {"label": "Sign in to Example", "account": null, "pending": null, "error": null}
+}
