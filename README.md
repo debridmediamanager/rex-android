@@ -27,6 +27,10 @@ Android 8.0 or newer. One APK fits phones and TVs; pick the one for your device'
   <img src="docs/screenshots/tv-signin-code.png" width="49%" alt="Signing in to Plex on a TV with a plex.tv/link code">
 </p>
 
+## Want your debrid accounts and Usenet too?
+
+There is another version of this app with [zurg](https://zurg.debridmediamanager.com/) built in. It puts your debrid accounts and Usenet in the same server and runs the same addons. It comes with a sponsorship: [become a sponsor](https://gatekeeper.debridmediamanager.com), then [get the app](https://zurg.debridmediamanager.com/android.html).
+
 ## Set up
 
 1. Open rex, give it a name and press **Start rex**. If another Plex server already runs on
