@@ -14,6 +14,12 @@ Android 8.0 or newer. One APK fits phones and TVs; pick the one for your device'
   <img src="docs/screenshots/phone-repo-addons.png" width="32%" alt="A repository's addons, with the sites each one can reach">
 </p>
 <p>
+  <img src="docs/screenshots/phone-youtube-code.png" width="24%" alt="Signing the YouTube addon in with a code">
+  <img src="docs/screenshots/phone-spotify-pair.png" width="24%" alt="Connecting the Spotify addon by picking this device in the Spotify app">
+  <img src="docs/screenshots/plexamp-library.png" width="24%" alt="Plexamp showing the Spotify addon's library on this device">
+  <img src="docs/screenshots/plexamp-player.png" width="24%" alt="Plexamp playing a track from the Spotify addon">
+</p>
+<p>
   <img src="docs/screenshots/tv-status.png" width="49%" alt="Status on a TV">
   <img src="docs/screenshots/tv-addons.png" width="49%" alt="Addons on a TV">
 </p>
