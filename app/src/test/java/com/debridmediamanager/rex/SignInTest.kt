@@ -17,6 +17,12 @@ class SignInTest {
     private val before = expiresAt - 245
     private val after = expiresAt
 
+    // Waiting for a sign-in is not a problem with the addon: the status line says what to do.
+    @Test fun anAddonWaitingForSignInSaysSoInItsStatusLine() {
+        assertTrue(addonSummary(Addon(id = "youtube", state = "error", errorKind = "sign_in")).startsWith("Sign in needed"))
+        assertTrue(addonSummary(Addon(id = "youtube", state = "error", errorKind = "would_remove")).startsWith("Problem"))
+    }
+
     // A host older than 0.3.0 sends no sign_in at all: such an addon needs no account.
     @Test fun anOlderHostNeedsNoSignIn() {
         val addon = json.decodeFromString(HostStatus.serializer(), fixture("status")).addons.single()
