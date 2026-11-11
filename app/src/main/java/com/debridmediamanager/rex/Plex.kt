@@ -15,13 +15,16 @@ private const val PRODUCT = "rex for Android"
 private val http = OkHttpClient.Builder().connectTimeout(10, TimeUnit.SECONDS).readTimeout(20, TimeUnit.SECONDS).build()
 
 /** rex's own answer about itself: whether a Plex account has claimed it. Throws while rex is not up. */
-fun rexClaimed(rexUrl: String): Boolean {
-    val body = http.newCall(Request.Builder().url("$rexUrl/identity").build()).execute().use {
+fun rexClaimed(rexUrl: String): Boolean = Regex("""claimed="(\d)"""").find(rexIdentity(rexUrl))?.groupValues?.get(1) == "1"
+
+/** The version rex reports, as any Plex server does. Throws while rex is not up. */
+fun rexVersion(rexUrl: String): String? = Regex("""\bversion="([^"]+)"""").find(rexIdentity(rexUrl))?.groupValues?.get(1)
+
+private fun rexIdentity(rexUrl: String): String =
+    http.newCall(Request.Builder().url("$rexUrl/identity").build()).execute().use {
         if (!it.isSuccessful) throw IOException("rex answered ${it.code}")
         it.body?.string().orEmpty()
     }
-    return Regex("""claimed="(\d)"""").find(body)?.groupValues?.get(1) == "1"
-}
 
 /**
  * Plex's PIN sign-in, used once to claim rex. The account token it yields asks plex.tv for a

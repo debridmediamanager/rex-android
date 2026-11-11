@@ -84,7 +84,7 @@ class MainActivity : ComponentActivity() {
                         "Status" -> StatusScreen(work, busy, navigate)
                         "Addons" -> AddonsScreen(work, busy)
                         "Settings" -> SettingsScreen(work, busy)
-                        "Logs" -> LogsScreen()
+                        "Logs" -> LogsScreen(work, busy)
                     } }
                 }
             }
