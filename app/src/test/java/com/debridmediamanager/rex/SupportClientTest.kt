@@ -52,6 +52,20 @@ class SupportClientTest {
         assertFalse(report, report.contains("example.com"))
     }
 
+    private val lenient = Json { ignoreUnknownKeys = true }
+
+    // The sign-in kind and whether each required addon is ready, still never the account.
+    @Test fun theReportSaysEachSignInsKindAndWhetherRequirementsAreMet() {
+        val host = lenient.decodeFromString(HostStatus.serializer(),
+            javaClass.getResource("/host/status-requires.json")!!.readText())
+        val report = addonsReport(host, "")
+        assertTrue(report, report.contains("youtube 1.1.0\n  repository: rex-addons\n  enabled: true\n  state: error\n  titles: 0, held: 0\n  last sync: never\n  signed in: no\n  sign-in kind: code\n"))
+        assertTrue(report, report.contains("  signed in: yes\n  sign-in kind: spotify\n  requires: youtube not met (sign in needed)\n"))
+        assertTrue(report, report.contains("  signed in: not needed\n  requires: youtube not met (sign in needed), lrclib not met (not installed)\n"))
+        assertFalse(report, report.contains("music.fan"))
+        assertTrue(addonsReport(HostStatus(addons = listOf(Addon("a", requires = listOf(Requirement("b"))))), "").endsWith("  requires: b met"))
+    }
+
     @Test fun sendPostsGzippedJsonAndReadsTheCode() {
         server.enqueue(MockResponse().setResponseCode(201)
             .setBody("""{"code":"K7QM3XPD","display":"K7QM-3XPD","expires_at":"2026-11-18T10:00:02Z","ttl_days":7}"""))
