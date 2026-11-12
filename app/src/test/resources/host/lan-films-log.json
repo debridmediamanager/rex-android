@@ -1,0 +1,28 @@
+{
+    "lines": [
+        {
+            "at": 1794491934,
+            "line": "[lan-films] installed from bases-oriental-compute-attach-trycloudflare-com-lan-addons"
+        },
+        {
+            "at": 1794491934,
+            "line": "WARN [lan-films] sync failed: set Server first"
+        },
+        {
+            "at": 1794492017,
+            "line": "[addon lan-films] listing http://192.168.88.39:18765 at 720p"
+        },
+        {
+            "at": 1794492018,
+            "line": "WARN [lan-films] items(): beach repeats an id or a path; left out"
+        },
+        {
+            "at": 1794492018,
+            "line": "WARN [lan-films] items(): \"broken\" has the path \"/absolute.mp4\", which is not relative; left out"
+        },
+        {
+            "at": 1794492018,
+            "line": "[lan-films] synced in 0.5 s (every title): 2 items in rex, 0 held"
+        }
+    ]
+}

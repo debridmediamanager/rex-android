@@ -297,4 +297,45 @@ class AddonsClientTest {
         assertEquals(listOf(Requirement("youtube", ok = false, reason = "sign in needed")), spotify.requires)
         assertEquals(listOf("sign in needed", "not installed"), lyrics.requires.map { it.reason })
     }
+
+    // Answered by rex-addons 0afc3bb (0.8.0) on a Fire TV Stick 4K Max, for a test addon with a select, help
+    // text and a host setting typed as a file server on the LAN, whose listing has a repeated id and an absolute path.
+    @Test fun hostSettingsWarningsAndWhatThePersonAllowed() {
+        server.enqueue(MockResponse().setBody(fixture("status-0.8.json")))
+        val addon = client.status().addons.single { it.id == "lan-films" }
+        assertEquals(listOf("192.168.88.39:18765"), addon.grantedHosts)
+        assertEquals(2L, addon.items)
+        assertEquals(Warnings(2, listOf("items(): beach repeats an id or a path; left out",
+            "items(): \"broken\" has the path \"/absolute.mp4\", which is not relative; left out")), addon.warnings)
+        server.enqueue(MockResponse().setBody(fixture("lan-films.json")))
+        val settings = client.settings("lan-films")
+        assertEquals(listOf("192.168.88.39:18765"), settings.grantedHosts)
+        val (quality, server) = settings.fields
+        assertEquals(ConfigField("quality", "Highest quality", "select", JsonPrimitive("1080"), help = "Pick lower on a slow network",
+            options = listOf(SelectOption("1080", "1080p"), SelectOption("720", "720p"))), quality)
+        assertEquals(ConfigField("server", "Server", "host", required = true, help = "Such as 192.168.1.20:8096"), server)
+        assertEquals(mapOf("quality" to "720", "server" to "192.168.88.39:18765"), initialForm(settings))
+    }
+
+    @Test fun anUpdateSaysWhichAddressSettingsItAdds() {
+        server.enqueue(MockResponse().setBody("""
+            {"version":"0.8.0","rex":{"url":"","reachable":true},"addons":[
+              {"id":"a","update_available":true,"update_hosts":["a.example"],"update_host_settings":["Server"]},
+              {"id":"b","update_available":false,"update_hosts":null,"update_host_settings":null}]}
+        """.trimIndent()))
+        val (a, b) = client.status().addons
+        assertEquals(listOf("Server"), a.updateHostSettings)
+        assertNull(b.updateHostSettings)
+        assertEquals(Warnings(), b.warnings)
+        assertEquals(emptyList<String>(), b.grantedHosts)
+    }
+
+    // The same addon's log on that Fire TV, from its install to its first sync.
+    @Test fun theLogAsksForItsLastLines() {
+        server.enqueue(MockResponse().setBody(fixture("lan-films-log.json")))
+        val log = client.log("lan-films")
+        assertEquals("GET /api/addons/lan-films/log?lines=300", server.takeRequest().let { "${it.method} ${it.path}" })
+        assertEquals(6, log.size)
+        assertEquals(AddonLogLine(1794492018, "[lan-films] synced in 0.5 s (every title): 2 items in rex, 0 held"), log.last())
+    }
 }

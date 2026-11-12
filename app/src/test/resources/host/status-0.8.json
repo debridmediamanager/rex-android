@@ -1,0 +1,67 @@
+{
+    "version": "0.8.0",
+    "rex": {
+        "url": "http://127.0.0.1:32400",
+        "reachable": true
+    },
+    "addons": [
+        {
+            "id": "internet-archive",
+            "name": "Internet Archive",
+            "version": "1.1.0",
+            "description": "Public domain feature films from archive.org: classics, silents, noir and B-movies, streamed straight from the Internet Archive.",
+            "enabled": true,
+            "repo": null,
+            "hosts": [
+                "archive.org",
+                "*.archive.org"
+            ],
+            "granted_hosts": [],
+            "state": "syncing",
+            "items": 0,
+            "held": 0,
+            "last_sync": null,
+            "error": null,
+            "error_kind": null,
+            "warnings": {
+                "count": 0,
+                "first": []
+            },
+            "sign_in": null,
+            "requires": [],
+            "update_available": false,
+            "update_hosts": null,
+            "update_host_settings": null
+        },
+        {
+            "id": "lan-films",
+            "name": "LAN Films",
+            "version": "1.0.0",
+            "description": "Films from a file server at home.",
+            "enabled": true,
+            "repo": "bases-oriental-compute-attach-trycloudflare-com-lan-addons",
+            "hosts": [],
+            "granted_hosts": [
+                "192.168.88.39:18765"
+            ],
+            "state": "idle",
+            "items": 2,
+            "held": 0,
+            "last_sync": 1794492018,
+            "error": null,
+            "error_kind": null,
+            "warnings": {
+                "count": 2,
+                "first": [
+                    "items(): beach repeats an id or a path; left out",
+                    "items(): \"broken\" has the path \"/absolute.mp4\", which is not relative; left out"
+                ]
+            },
+            "sign_in": null,
+            "requires": [],
+            "update_available": false,
+            "update_hosts": null,
+            "update_host_settings": null
+        }
+    ]
+}

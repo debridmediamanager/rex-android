@@ -41,11 +41,22 @@ object AddonsToken {
     val repo: String? = null, @SerialName("update_available") val updateAvailable: Boolean = false,
     /** The websites the installed copy can reach, and those the offered update could. */
     val hosts: List<String> = emptyList(), @SerialName("update_hosts") val updateHosts: List<String>? = null,
+    /** `host:port` the person allowed by typing them into its `host` settings (host 0.7). */
+    @SerialName("granted_hosts") val grantedHosts: List<String> = emptyList(),
+    /** Labels of the `host` settings the offered update adds (host 0.7); null without an update. */
+    @SerialName("update_host_settings") val updateHostSettings: List<String>? = null,
+    /** Entries the last sync left out (host 0.6). */
+    val warnings: Warnings = Warnings(),
     /** Null for an addon that needs no account, and from a host older than 0.3.0. */
     @SerialName("sign_in") val signIn: SignIn? = null,
     /** Other addons this one works through (host 0.5.0); empty from older hosts. */
     val requires: List<Requirement> = emptyList(),
 )
+/** How many entries the last sync left out, and the first few messages saying why. */
+@Serializable data class Warnings(val count: Long = 0, val first: List<String> = emptyList())
+/** One line of an addon's log, at Unix seconds. */
+@Serializable data class AddonLogLine(val at: Long = 0, val line: String = "")
+@Serializable private data class AddonLog(val lines: List<AddonLogLine> = emptyList())
 /** The addon's account on its website. The host watches for the code itself; the app only reads this. */
 @Serializable data class SignIn(
     val label: String? = null, val account: String? = null, val pending: PendingSignIn? = null, val error: String? = null,
@@ -85,13 +96,19 @@ object AddonsToken {
 @Serializable data class ConfigField(
     val key: String, val label: String = key, val type: String = "text",
     val default: JsonElement? = null, val required: Boolean = false,
+    /** A line to show with the field (host 0.6). */
+    val help: String? = null,
+    /** A `select`'s choices: show the label, send the value. */
+    val options: List<SelectOption> = emptyList(),
 )
+@Serializable data class SelectOption(val value: String, val label: String = value)
 
 /**
  * An addon's settings as its manifest declares them, with what is set now (secrets masked), and how
  * many of its titles the person deleted in a Plex app (rex keeps them out until they come back).
  */
-data class AddonSettings(val name: String, val fields: List<ConfigField>, val values: Map<String, JsonElement>, val deleted: Long = 0)
+data class AddonSettings(val name: String, val fields: List<ConfigField>, val values: Map<String, JsonElement>, val deleted: Long = 0,
+    val hosts: List<String> = emptyList(), val grantedHosts: List<String> = emptyList())
 
 class ApiFailure(val status: Int, message: String) : IOException(message)
 
@@ -125,8 +142,14 @@ class AddonsClient(
             (manifest["name"] as? JsonPrimitive)?.contentOrNull ?: id,
             (manifest["config"] as? JsonArray).orEmpty().map { json.decodeFromJsonElement(ConfigField.serializer(), it) },
             (answer["config"] as? JsonObject).orEmpty().filterValues { it !is JsonNull },
-            (answer["deleted"] as? JsonPrimitive)?.longOrNull ?: 0)
+            (answer["deleted"] as? JsonPrimitive)?.longOrNull ?: 0,
+            strings(answer["hosts"]), strings(answer["granted_hosts"]))
     }
+    private fun strings(element: JsonElement?) = (element as? JsonArray).orEmpty().mapNotNull { (it as? JsonPrimitive)?.contentOrNull }
+
+    /** The addon's last [lines] log lines, oldest first, secrets masked by the host. */
+    fun log(id: String, lines: Int = 300): List<AddonLogLine> =
+        json.decodeFromString(AddonLog.serializer(), call("GET", url("api", "addons", id, "log").newBuilder().addQueryParameter("lines", "$lines").build())).lines
     /** Brings back the titles the person deleted in a Plex app, and syncs. */
     fun restore(id: String) { call("POST", url("api", "addons", id, "restore"), JsonObject(emptyMap())) }
 

@@ -1,0 +1,70 @@
+{
+    "id": "lan-films",
+    "name": "LAN Films",
+    "version": "1.0.0",
+    "description": "Films from a file server at home.",
+    "enabled": true,
+    "repo": "bases-oriental-compute-attach-trycloudflare-com-lan-addons",
+    "hosts": [],
+    "granted_hosts": [
+        "192.168.88.39:18765"
+    ],
+    "state": "idle",
+    "items": 2,
+    "held": 0,
+    "last_sync": 1794492018,
+    "error": null,
+    "error_kind": null,
+    "warnings": {
+        "count": 2,
+        "first": [
+            "items(): beach repeats an id or a path; left out",
+            "items(): \"broken\" has the path \"/absolute.mp4\", which is not relative; left out"
+        ]
+    },
+    "sign_in": null,
+    "requires": [],
+    "update_available": false,
+    "update_hosts": null,
+    "update_host_settings": null,
+    "manifest": {
+        "id": "lan-films",
+        "name": "LAN Films",
+        "version": "1.0.0",
+        "description": "Films from a file server at home.",
+        "host": "0.7",
+        "hosts": [],
+        "config": [
+            {
+                "key": "quality",
+                "label": "Highest quality",
+                "type": "select",
+                "default": "1080",
+                "options": [
+                    {
+                        "value": "1080",
+                        "label": "1080p"
+                    },
+                    {
+                        "value": "720",
+                        "label": "720p"
+                    }
+                ],
+                "help": "Pick lower on a slow network"
+            },
+            {
+                "key": "server",
+                "label": "Server",
+                "type": "host",
+                "required": true,
+                "help": "Such as 192.168.1.20:8096"
+            }
+        ],
+        "refresh_minutes": 60
+    },
+    "config": {
+        "quality": "720",
+        "server": "192.168.88.39:18765"
+    },
+    "deleted": 0
+}
