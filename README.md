@@ -47,22 +47,24 @@ explains what else your device needs.
 ## Addons
 
 **Addons** lists what each addon added, when it last synced and any problem. Turn one off,
-sync it now, change its settings, update it or remove it. An addon that needs an account on its website shows
+sync it now, change its settings, read its log, update it or remove it. Entries a sync had to
+leave out show as "2 left out"; its log says why. An addon that needs an account on its website shows
 **Sign in**: go to the page it names and enter the code on screen (on a TV, scan the QR code with
 your phone). rex notices once you did. A Spotify addon shows **Connect Spotify** instead: open
 Spotify on a phone on the same Wi-Fi, play any song, tap the devices button and pick this device by
 its rex name. Pairing needs the device on Wi-Fi or Ethernet; while it waits, the app keeps Wi-Fi
 passing the local announcements Spotify finds it by. An addon that works through another one says
 what that one needs, such as "Sign in to the YouTube addon first", and doesn't sync until then.
-An update that can reach other websites,
-or comes from another repository, asks you first. Titles you delete in a Plex app stay gone;
+An addon for a server of your own (a NAS, a media server) asks for its address in
+**Settings**, such as `192.168.1.20:8096`, and can then reach it, on that port only. An update that can
+reach other websites, asks for another address, or comes from another repository, asks you first. Titles you delete in a Plex app stay gone;
 the addon's **Settings** can bring them back.
 
 Addons come from **repositories**: git repositories that hold addons. Add one by its link
 (`github.com/user/repo` is enough), open it, and install what it offers; rex shows which
 websites an addon can reach before you install it. Refresh a repository to get its updates;
 removing one keeps the addons you installed from it, without further updates. Addons run sealed
-off from your device and reach only the sites they name; still, install only from people you
+off from your device and reach only the sites they name and the addresses you type; still, install only from people you
 trust. How to write one: [rex-addons](https://github.com/debridmediamanager/rex-addons).
 
 The GitHub release starts with rex-addons' own repository added. The Play Store build starts
