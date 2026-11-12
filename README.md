@@ -9,22 +9,27 @@ Android 8.0 or newer. One APK fits phones and TVs; pick the one for your device'
 (Fire TV Sticks among them), `x86_64` for emulators. Google Play picks for you.
 
 <p>
-  <img src="docs/screenshots/phone-status.png" width="32%" alt="Status: rex running, with the Internet Archive addon's 100 titles">
-  <img src="docs/screenshots/phone-addons.png" width="32%" alt="Addons: installed addons and repositories">
+  <img src="docs/screenshots/phone-status.png" width="32%" alt="Status: rex running and signed in to Plex, with two addons synced">
+  <img src="docs/screenshots/phone-addons.png" width="32%" alt="Addons: an example home server addon and the Internet Archive, each with sync, settings and a log">
   <img src="docs/screenshots/phone-repo-addons.png" width="32%" alt="A repository's addons, with the sites each one can reach">
 </p>
 <p>
-  <img src="docs/screenshots/phone-youtube-code.png" width="24%" alt="Signing the YouTube addon in with a code">
-  <img src="docs/screenshots/phone-spotify-pair.png" width="24%" alt="Connecting the Spotify addon by picking this device in the Spotify app">
-  <img src="docs/screenshots/plexamp-library.png" width="24%" alt="Plexamp showing the Spotify addon's library on this device">
-  <img src="docs/screenshots/plexamp-player.png" width="24%" alt="Plexamp playing a track from the Spotify addon">
+  <img src="docs/screenshots/phone-addon-settings.png" width="32%" alt="An addon's settings: a server address and a quality picked from buttons, with help under each">
+  <img src="docs/screenshots/phone-addon-log.png" width="32%" alt="An addon's own log, newest first">
+  <img src="docs/screenshots/phone-youtube-code.png" width="32%" alt="Signing the YouTube addon in with a code">
 </p>
 <p>
-  <img src="docs/screenshots/tv-status.png" width="49%" alt="Status on a TV">
+  <img src="docs/screenshots/phone-spotify-pair.png" width="32%" alt="Connecting the Spotify addon by picking this device in the Spotify app">
+  <img src="docs/screenshots/plexamp-library.png" width="32%" alt="Plexamp showing the Spotify addon's library on this device">
+  <img src="docs/screenshots/plexamp-player.png" width="32%" alt="Plexamp playing a track from the Spotify addon">
+</p>
+<p>
+  <img src="docs/screenshots/tv-status.png" width="49%" alt="Status on a TV: rex running and signed in to Plex">
   <img src="docs/screenshots/tv-addons.png" width="49%" alt="Addons on a TV">
 </p>
 <p>
   <img src="docs/screenshots/tv-signin-code.png" width="49%" alt="Signing in to Plex on a TV with a plex.tv/link code">
+  <img src="docs/screenshots/tv-plex-playing.png" width="49%" alt="The Plex app on the same TV playing a 1914 Chaplin short from rex">
 </p>
 
 ## Want your debrid accounts and Usenet too?
