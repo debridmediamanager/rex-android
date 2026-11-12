@@ -64,6 +64,7 @@ fun addonsReport(host: HostStatus?, detail: String): String {
             "  enabled: ${addon.enabled}",
             "  state: ${addon.state}",
             "  titles: ${addon.items}, held: ${addon.held}",
+            addon.warnings.count.takeIf { it > 0 }?.let { "  left out at the last sync: $it" },
             "  last sync: ${addon.lastSync?.takeIf { it > 0 }?.let { Instant.ofEpochSecond(it).toString() } ?: "never"}",
             // Whether, never who, and never the code.
             "  signed in: ${addon.signIn?.let { if (it.account != null) "yes" else "no" } ?: "not needed"}",

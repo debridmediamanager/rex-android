@@ -1,7 +1,11 @@
 package com.debridmediamanager.rex
 
 import androidx.activity.compose.BackHandler
+import android.content.Intent
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.*
@@ -9,13 +13,18 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 internal val client by lazy { AddonsClient() }
 
@@ -102,6 +111,7 @@ private class PendingUpdate(val name: String, val warning: String, val update: (
 @Composable fun AddonsScreen(work: Work, busy: Boolean) {
     val addons by Status.addons.collectAsStateWithLifecycle()
     var editing by remember { mutableStateOf<String?>(null) }
+    var reading by remember { mutableStateOf<String?>(null) }
     var browsing by remember { mutableStateOf<Repo?>(null) }
     var removing by remember { mutableStateOf<Addon?>(null) }
     var signingOut by remember { mutableStateOf<Addon?>(null) }
@@ -118,6 +128,7 @@ private class PendingUpdate(val name: String, val warning: String, val update: (
     val repoCall = { done: String, call: () -> Unit -> work.addonCall(done) { call(); repos = client.repos() } }
     signingIn?.let { id -> SignInScreen(id, work, busy) { openSignIn.value = null }; return }
     editing?.let { id -> AddonSettingsForm(id, work, busy) { editing = null }; return }
+    reading?.let { id -> AddonLogScreen(id) { reading = null }; return }
     browsing?.let { repo -> RepoScreen(repo, work, busy) { browsing = null }; return }
     val now = clock()
     ScrollPage {
@@ -156,6 +167,7 @@ private class PendingUpdate(val name: String, val warning: String, val update: (
                             work.addonCall("Syncing ${addon.name}.") { client.sync(addon.id, force = account.force) }
                         }
                         Action("Settings", !busy) { editing = addon.id }
+                        Action("Log") { reading = addon.id }
                         if (account.signOut) Action(if (addon.signIn?.spotify == true) "Disconnect" else "Sign out", !busy) { signingOut = addon }
                         Action("Remove", !busy) { removing = addon }
                     }
@@ -352,5 +364,65 @@ private class PendingUpdate(val name: String, val warning: String, val update: (
             }
         }
         if (errors.isNotEmpty()) Text("Fix the fields marked above.", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.SemiBold)
+    }
+}
+
+/** "3 left out" and why: entries the last sync skipped, which show nowhere else. */
+fun leftOut(warnings: Warnings): String? = warnings.count.takeIf { it > 0 }?.let { "$it left out" }
+
+/** A log line as the log page shows and shares it: the time of day, then the line, secrets hidden. */
+fun logText(line: AddonLogLine, format: SimpleDateFormat = SimpleDateFormat("MM-dd HH:mm:ss", Locale.getDefault())): String =
+    "${format.format(Date(line.at * 1000))} ${redact(line.line)}"
+
+/**
+ * One addon's own log, newest first, one focusable line each so a remote scrolls it, and what its
+ * last sync left out. The only way to see why an addon fails on a TV.
+ */
+@Composable fun AddonLogScreen(id: String, close: () -> Unit) {
+    val context = LocalContext.current
+    val addons by Status.addons.collectAsStateWithLifecycle()
+    val addon = addons.host?.addons?.firstOrNull { it.id == id }
+    var lines by remember { mutableStateOf<List<String>?>(null) }
+    var problem by remember { mutableStateOf("") }
+    LaunchedEffect(id) {
+        val format = SimpleDateFormat("MM-dd HH:mm:ss", Locale.getDefault())
+        while (true) {
+            withContext(Dispatchers.IO) { runCatching { client.log(id) } }
+                .onSuccess { log -> lines = log.map { logText(it, format) }.asReversed(); problem = "" }
+                .onFailure { problem = it.message ?: "Can't read its log." }
+            delay(3_000)
+        }
+    }
+    BackHandler { close() }
+    val start = remember { FocusRequester() }
+    LaunchedEffect(Unit) { runCatching { start.requestFocus() } }
+    val name = addon?.name ?: id
+    LazyColumn(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        item { Title("$name log", "What it said lately, newest first. Keys and passwords are hidden.") }
+        item {
+            Buttons {
+                Action("Back", modifier = Modifier.focusRequester(start)) { close() }
+                Action("Share", !lines.isNullOrEmpty()) {
+                    // Fire TV has no share sheet.
+                    runCatching { context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain")
+                        .putExtra(Intent.EXTRA_TEXT, lines.orEmpty().asReversed().joinToString("\n")), "Share $name's log")) }
+                }
+            }
+        }
+        val warnings = addon?.warnings ?: Warnings()
+        if (warnings.count > 0) item {
+            Panel(Modifier.focusable()) {
+                val titles = if (warnings.count == 1L) "entry" else "entries"
+                Text("The last sync left out ${warnings.count} $titles", fontWeight = FontWeight.SemiBold)
+                warnings.first.forEach { Text(it, style = MaterialTheme.typography.bodySmall) }
+                if (warnings.count > warnings.first.size) Text("The rest are in the log below.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+        if (problem.isNotBlank()) item { Text(problem, color = MaterialTheme.colorScheme.error) }
+        when {
+            lines == null -> if (problem.isBlank()) item { Text("Loading…") }
+            lines!!.isEmpty() -> item { Text("Nothing yet.", modifier = Modifier.focusable()) }
+            else -> items(lines!!) { line -> Text(line, style = MaterialTheme.typography.bodySmall, modifier = Modifier.focusable()) }
+        }
     }
 }

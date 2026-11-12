@@ -307,6 +307,7 @@ class AddonsClientTest {
         assertEquals(2L, addon.items)
         assertEquals(Warnings(2, listOf("items(): beach repeats an id or a path; left out",
             "items(): \"broken\" has the path \"/absolute.mp4\", which is not relative; left out")), addon.warnings)
+        assertEquals("2 left out", leftOut(addon.warnings))
         server.enqueue(MockResponse().setBody(fixture("lan-films.json")))
         val settings = client.settings("lan-films")
         assertEquals(listOf("192.168.88.39:18765"), settings.grantedHosts)
@@ -338,5 +339,7 @@ class AddonsClientTest {
         assertEquals("GET /api/addons/lan-films/log?lines=300", server.takeRequest().let { "${it.method} ${it.path}" })
         assertEquals(6, log.size)
         assertEquals(AddonLogLine(1794492018, "[lan-films] synced in 0.5 s (every title): 2 items in rex, 0 held"), log.last())
+        val utc = java.text.SimpleDateFormat("MM-dd HH:mm:ss", java.util.Locale.US).apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }
+        assertEquals("11-12 14:00:18 [lan-films] synced in 0.5 s (every title): 2 items in rex, 0 held", logText(log.last(), utc))
     }
 }

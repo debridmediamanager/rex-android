@@ -54,4 +54,9 @@ class UpdateWarningTest {
         assertEquals("Can reach any website, and what you allowed: nas.local:80, nas.local:443.",
             reachLine(listOf("*"), listOf("nas.local:80", "nas.local:443")))
     }
+
+    @Test fun leftOutEntriesAreAQuietCount() {
+        assertNull(leftOut(Warnings()))
+        assertEquals("3 left out", leftOut(Warnings(3, listOf("a"))))
+    }
 }

@@ -160,6 +160,7 @@ fun addonSummary(addon: Addon): String = listOfNotNull(
     "${addon.items} ${if (addon.items == 1L) "title" else "titles"}",
     // Sent without a probe: rex holds them unshown until a later sync checks them.
     if (addon.held > 0) "${addon.held} not shown yet" else null,
+    leftOut(addon.warnings),
     lastSync(addon)?.let { "synced $it" },
 ).joinToString(" · ")
 
