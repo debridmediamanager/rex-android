@@ -43,7 +43,7 @@ account, no names shown). Sizes checked against Google's help pages that day.
 | Feature graphic | `feature-graphic.png` | 1024 x 500, JPEG or 24-bit PNG, no alpha. Required |
 | Phone screenshots | `phone/01..07-*.png`, 1080 x 1920 | 2 to 8, sides 320 to 3840 px, long side at most twice the short. Captions stay in the top 20% |
 | TV banner | `tv-banner.png`, 1280 x 720 | Required for an Android TV app, no alpha |
-| TV screenshots | `tv/01..06-*.png`, 1920 x 1080 | At least one; Android TV review also wants at least one unaltered shot of the current app: upload one from `tv/unaltered/` first |
+| TV screenshots | `tv/01..06-*.png`, 1920 x 1080 | At least one; Android TV review also wants at least one unaltered shot of the current app: upload one from `tv/unaltered/` first (none shows the Plex account; in `tv/03` its initial is blanked) |
 
 Phone order: Status, a film in the Plex app, playback, Addons, an addon's settings, its log, setup.
 Phone shots 04 to 06, TV shot 05 (and the README's addon shots) show **Home Server**, an example addon written for

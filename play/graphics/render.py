@@ -14,10 +14,11 @@ import sys
 import tempfile
 from pathlib import Path
 
-from PIL import Image
+from PIL import Image, ImageDraw
 
 HERE = Path(__file__).resolve().parent
 RAW = HERE / "raw"
+PREP = Path(tempfile.mkdtemp())  # cropped or masked copies of captures; raw/ stays unaltered
 CHROME = os.environ.get("CHROME", "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
 
 BG, ACCENT, TEXT, MUTED, EDGE = "#131418", "#FF9A62", "#F2EEEA", "#B9B4AF", "#2A2D35"
@@ -74,6 +75,9 @@ p {{ font-weight: 500; color: {MUTED}; line-height: 1.3; }}
 .shot {{ position: absolute; flex: none; overflow: hidden; border: 2px solid {EDGE};
   box-shadow: 0 30px 80px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.03); background: #1C1E24; }}
 .shot img {{ display: block; width: 100%; }}
+.card {{ display: block; border: 2px solid {EDGE}; border-radius: 40px; max-height: 100%;
+  box-shadow: 0 30px 80px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.03); }}
+.fill {{ flex: 1; min-height: 0; display: flex; justify-content: center; align-items: center; }}
 """
 
 
@@ -81,28 +85,46 @@ def page(body, w, h):
     return f'<!doctype html><html><head><meta charset="utf-8"><style>{CSS}</style></head><body>{body}</body></html>'
 
 
+def prepared(name, box=None, blank=None):
+    """A copy of a capture, cropped to `box` (left, top, right, bottom) and with the circle `blank`
+    (x, y, r) painted over, as a file URI."""
+    image = Image.open(RAW / f"{name}.png").convert("RGB")
+    if blank:
+        x, y, r = blank
+        draw = ImageDraw.Draw(image)
+        draw.ellipse((x - r - 12, y - r - 12, x + r + 12, y + r + 12), fill=image.getpixel((x - r - 14, y)))
+        draw.ellipse((x - r, y - r, x + r, y + r), fill="#4A4D55")
+    if box:
+        image = image.crop(box)
+    out = PREP / f"{name}-{abs(hash((box, blank)))}.png"
+    image.save(out)
+    return out.as_uri()
+
+
 def phone_body(name, title, sub, bottom):
-    src = (RAW / f"{name}.png").as_uri()
-    # A short page is shown larger, so it fills the frame instead of leaving an empty card.
-    width = 780 if bottom is None or bottom > 1600 else 940
-    scale = width / 1080
+    caption = (f'<div style="text-align:center;flex:none"><h1 style="font-size:74px">{html.escape(title)}</h1>'
+               f'<p style="font-size:38px;margin-top:22px">{html.escape(sub)}</p></div>')
     if bottom is None:
-        # A landscape capture, turned as the phone is when it plays full screen.
-        shot = (f'<div class="shot" style="width:780px;height:1734px;border-radius:44px;position:relative">'
-                f'<img src="{src}" style="position:absolute;width:1734px;height:780px;left:0;top:0;'
-                f'transform-origin:0 0;transform:translate(780px,0) rotate(90deg)"></div>')
+        # Playback is landscape: shown upright across the frame, with the film's page under it.
+        playing = prepared(name)
+        film = prepared("phone-plex-film", (0, 65, 1080, 2070))
+        shots = (f'<img class="card" src="{playing}" style="width:960px;flex:none;border-radius:28px">'
+                 f'<div class="fill"><img class="card" src="{film}" style="max-width:780px"></div>')
     else:
-        # Status bar and tab bar cropped off; a tall capture runs off the bottom edge.
-        shot = (f'<div class="shot" style="width:{width}px;height:{round((bottom - 65) * scale)}px;border-radius:44px;'
-                f'position:relative;flex:none;{"margin:auto 0" if width > 780 else ""}"><img src="{src}" style="margin-top:{-round(65 * scale)}px"></div>')
+        # Status bar and tab bar cropped off; the whole card fits, shrinking if the caption is tall.
+        # A short page is shown larger, so it fills the frame instead of leaving an empty card.
+        width = 780 if bottom > 1600 else 940
+        shots = f'<div class="fill"><img class="card" src="{prepared(name, (0, 65, 1080, bottom))}" style="max-width:{width}px"></div>'
     return (f'<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;'
-            f'padding:92px 84px 0;gap:64px"><div style="text-align:center">'
-            f'<h1 style="font-size:74px">{html.escape(title)}</h1>'
-            f'<p style="font-size:38px;margin-top:22px">{html.escape(sub)}</p></div>{shot}</div>')
+            f'padding:92px 60px 64px;gap:56px">{caption}{shots}</div>')
+
+
+# The Plex account's initial on Plex's side rail, blanked to a plain circle (capture x, y, radius).
+AVATAR = {"tv-plex-library": (64, 467, 22)}
 
 
 def tv_body(name, title, sub):
-    src = (RAW / f"{name}.png").as_uri()
+    src = prepared(name, blank=AVATAR.get(name))
     return (f'<div style="position:absolute;left:0;right:0;top:54px;text-align:center">'
             f'<h1 style="font-size:64px">{html.escape(title)}</h1>'
             f'<p style="font-size:32px;margin-top:14px">{html.escape(sub)}</p></div>'
