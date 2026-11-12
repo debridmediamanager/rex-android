@@ -46,12 +46,13 @@ fun reachLine(hosts: List<String>, granted: List<String>, asks: Boolean = false)
 
 /**
  * What to tell the person before an update that can reach other websites than the installed copy,
- * or comes from another repository (also a repository taking over the copy built into the app).
- * Null when it changes neither: then it stays one tap.
+ * comes from another repository (also a repository taking over the copy built into the app), or adds
+ * [hostSettings]: addresses to type in, which it may then reach. Null when it changes none: then it stays one tap.
  */
-fun updateWarning(installedHosts: List<String>?, offeredHosts: List<String>?, installedRepo: String?, repo: String, repoName: String): String? {
+fun updateWarning(installedHosts: List<String>?, offeredHosts: List<String>?, installedRepo: String?, repo: String, repoName: String,
+    hostSettings: List<String>? = null): String? {
     val sameSites = installedHosts != null && offeredHosts != null && installedHosts.toSet() == offeredHosts.toSet()
-    if (sameSites && installedRepo == repo) return null
+    if (sameSites && installedRepo == repo && hostSettings.isNullOrEmpty()) return null
     val from = if (installedRepo == repo) "It comes from $repoName."
         else "It now comes from $repoName instead of ${installedRepo ?: "the copy built into the app"}."
     val added = offeredHosts.orEmpty() - installedHosts.orEmpty().toSet()
@@ -60,7 +61,12 @@ fun updateWarning(installedHosts: List<String>?, offeredHosts: List<String>?, in
         installedHosts == null || added.isEmpty() -> "It can reach ${reach(offeredHosts)}."
         else -> "It can reach ${reach(offeredHosts)}, new: ${reach(added)}."
     }
-    return "$from $sites Update only from people you trust."
+    val asks = when (hostSettings.orEmpty().size) {
+        0 -> ""
+        1 -> " It asks for an address (${hostSettings!![0]}) and can reach whatever you type there."
+        else -> " It asks for addresses (${hostSettings!!.joinToString(", ")}) and can reach whatever you type there."
+    }
+    return "$from $sites$asks Update only from people you trust."
 }
 
 /**
@@ -143,7 +149,7 @@ private class PendingUpdate(val name: String, val warning: String, val update: (
                         if (addon.updateAvailable && repo != null) Action("Update", !busy, primary = true) {
                             val update = { work.addonCall("${addon.name} updated.") { client.install(repo, addon.id) } }
                             val repoName = repos.firstOrNull { it.id == repo }?.name?.ifBlank { null } ?: repo
-                            val warning = updateWarning(addon.hosts, addon.updateHosts, repo, repo, repoName)
+                            val warning = updateWarning(addon.hosts, addon.updateHosts, repo, repo, repoName, addon.updateHostSettings)
                             if (warning == null) update() else asking = PendingUpdate(addon.name, warning, update)
                         }
                         Action(if (account.force) "Sync anyway" else "Sync now", !busy && addon.enabled && addon.state != "syncing" && account.canSync && need == null) {
@@ -247,7 +253,9 @@ private class PendingUpdate(val name: String, val warning: String, val update: (
                         addon.installedVersion == null -> Action("Install", !busy, primary = true) { confirming = addon }
                         else -> Action("Update to ${addon.version}", !busy, primary = true) {
                             val update = { work.addonCall("${addon.name} updated.") { client.install(repo.id, addon.id); load() } }
-                            val warning = updateWarning(addon.installedHosts, addon.hosts, addon.installedRepo, repo.id, name)
+                            // The repository's list doesn't say which host settings it adds; the installed copy's status does.
+                            val asks = Status.addons.value.host?.addons?.firstOrNull { it.id == addon.id && it.repo == repo.id }?.updateHostSettings
+                            val warning = updateWarning(addon.installedHosts, addon.hosts, addon.installedRepo, repo.id, name, asks)
                             if (warning == null) update() else asking = PendingUpdate(addon.name, warning, update)
                         }
                     }

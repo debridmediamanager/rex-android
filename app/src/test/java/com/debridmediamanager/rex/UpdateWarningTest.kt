@@ -39,6 +39,14 @@ class UpdateWarningTest {
             updateWarning(null, archive, "rex-addons", "rex-addons", "rex addons"))
     }
 
+    // Host 0.7: an update that adds an address setting asks first, even with the same sites.
+    @Test fun aNewAddressSettingAsks() {
+        assertEquals("It comes from rex addons. It can reach archive.org, *.archive.org. It asks for an address (Server) " +
+            "and can reach whatever you type there. Update only from people you trust.",
+            updateWarning(archive, archive, "rex-addons", "rex-addons", "rex addons", listOf("Server")))
+        assertNull(updateWarning(archive, archive, "rex-addons", "rex-addons", "rex addons", emptyList()))
+    }
+
     @Test fun reachNamesWhatThePersonAllowed() {
         assertEquals("Can reach archive.org, *.archive.org.", reachLine(archive, emptyList()))
         assertEquals("Can reach only the address you type below.", reachLine(emptyList(), emptyList(), asks = true))
