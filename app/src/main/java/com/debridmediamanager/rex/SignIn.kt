@@ -53,10 +53,10 @@ data class AccountView(
 )
 
 fun accountView(addon: Addon, now: Long): AccountView {
-    val signIn = addon.signIn ?: return AccountView(error = addon.error?.ifBlank { null }, force = syncAnyway(addon))
+    val signIn = addon.signIn ?: return AccountView(error = addonError(addon.error), force = syncAnyway(addon))
     // "Nobody is signed in" says what the button already does.
     val error = signIn.error?.ifBlank { null }?.let { "That didn't work: $it" }
-        ?: addon.error?.takeIf { it.isNotBlank() && addon.errorKind != "sign_in" }
+        ?: addonError(addon.error)?.takeIf { addon.errorKind != "sign_in" }
     signIn.account?.let { account ->
         return AccountView(signedInAs(signIn.spotify, account), error, signOut = true, force = syncAnyway(addon))
     }
@@ -74,6 +74,13 @@ fun accountView(addon: Addon, now: Long): AccountView {
         pending != null -> AccountView("The code ran out.", error, "Get a new code", canSync = false)
         else -> AccountView("Sign in to start.", error, label ?: "Sign in", canSync = false)
     }
+}
+
+private val askedToWait = Regex("""the website asked to wait (\d+) s""")
+
+/** An addon's error as the person reads it; the host's bare RETRY_AFTER wording counts seconds. */
+fun addonError(error: String?): String? = error?.ifBlank { null }?.let {
+    askedToWait.matchEntire(it)?.let { wait -> "The website asked rex to wait. It tries again ${retryIn(wait.groupValues[1].toLong())}." } ?: it
 }
 
 /** "Signed in as …", or "Connected as …" for a Spotify device. */

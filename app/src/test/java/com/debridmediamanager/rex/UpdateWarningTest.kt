@@ -59,4 +59,10 @@ class UpdateWarningTest {
         assertNull(leftOut(Warnings()))
         assertEquals("3 left out", leftOut(Warnings(3, listOf("a"))))
     }
+
+    @Test fun aRetryAfterWaitReadsAsTime() {
+        assertEquals("The website asked rex to wait. It tries again in 2 hours.", addonError("the website asked to wait 7200 s"))
+        assertEquals("YouTube answered 429", addonError("YouTube answered 429"))
+        assertNull(addonError(" "))
+    }
 }
