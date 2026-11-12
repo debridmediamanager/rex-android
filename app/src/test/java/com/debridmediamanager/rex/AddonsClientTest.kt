@@ -310,6 +310,7 @@ class AddonsClientTest {
         server.enqueue(MockResponse().setBody(fixture("lan-films.json")))
         val settings = client.settings("lan-films")
         assertEquals(listOf("192.168.88.39:18765"), settings.grantedHosts)
+        assertEquals("Can reach only what you allowed: 192.168.88.39:18765.", reachLine(settings.hosts, settings.grantedHosts, asks = true))
         val (quality, server) = settings.fields
         assertEquals(ConfigField("quality", "Highest quality", "select", JsonPrimitive("1080"), help = "Pick lower on a slow network",
             options = listOf(SelectOption("1080", "1080p"), SelectOption("720", "720p"))), quality)

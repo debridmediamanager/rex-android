@@ -38,4 +38,12 @@ class UpdateWarningTest {
         assertEquals("It comes from rex addons. It can reach archive.org, *.archive.org. Update only from people you trust.",
             updateWarning(null, archive, "rex-addons", "rex-addons", "rex addons"))
     }
+
+    @Test fun reachNamesWhatThePersonAllowed() {
+        assertEquals("Can reach archive.org, *.archive.org.", reachLine(archive, emptyList()))
+        assertEquals("Can reach only the address you type below.", reachLine(emptyList(), emptyList(), asks = true))
+        assertEquals("Can reach only what you allowed: 192.168.1.20:8096.", reachLine(emptyList(), listOf("192.168.1.20:8096")))
+        assertEquals("Can reach any website, and what you allowed: nas.local:80, nas.local:443.",
+            reachLine(listOf("*"), listOf("nas.local:80", "nas.local:443")))
+    }
 }

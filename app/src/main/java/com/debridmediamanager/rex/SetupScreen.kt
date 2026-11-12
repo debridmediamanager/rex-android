@@ -42,7 +42,7 @@ import kotlinx.coroutines.withContext
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable fun Input(label: String, value: String, secret: Boolean = false, hint: String = "", multiline: Boolean = false,
-    number: Boolean = false, link: Boolean = false, onChange: (String) -> Unit) {
+    number: Boolean = false, link: Boolean = false, error: Boolean = false, onChange: (String) -> Unit) {
     var visible by remember { mutableStateOf(false) }
     val television = LocalTelevision.current
     val focus = LocalFocusManager.current
@@ -97,7 +97,7 @@ import kotlinx.coroutines.withContext
             autoCorrectEnabled = if (secret || link) false else null,
             imeAction = if (television && !multiline) ImeAction.Done else ImeAction.Default),
         keyboardActions = if (television) KeyboardActions(onDone = { finishEditing() }) else KeyboardActions.Default,
-        supportingText = if (help.isNotBlank()) ({ Text(help) }) else null,
+        supportingText = if (help.isNotBlank()) ({ Text(help) }) else null, isError = error,
         visualTransformation = if (secret && !visible) PasswordVisualTransformation() else VisualTransformation.None,
         trailingIcon = if (secret && !television) ({ TextButton(onClick = { visible = !visible }) { Text(if (visible) "Hide" else "Show") } }) else null)
     // Outside the field's key handler: an inline icon would send Select through the field's edit action.

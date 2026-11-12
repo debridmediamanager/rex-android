@@ -46,10 +46,24 @@ fun checkForm(settings: AddonSettings, input: Map<String, String>): FormResult {
                     text.isNotEmpty() -> put(field.key, text)
                     field.required && !secretSaved(settings, field.key) -> errors[field.key] = "Required"
                 }
-                // text, and any type this app does not know yet
+                // Blank puts back the default; the host refuses a value outside the options.
+                "select" -> when {
+                    text.isNotEmpty() -> put(field.key, text)
+                    field.required && field.default == null -> errors[field.key] = "Pick one"
+                    else -> put(field.key, JsonNull)
+                }
+                // text, host (an address the host checks) and any type this app does not know yet
                 else -> if (text.isEmpty() && field.required) errors[field.key] = "Required" else put(field.key, text)
             }
         }
     }
     return FormResult(body, errors)
 }
+
+/**
+ * The field a refused save names, and why: the host answers `400 <label>: <why>`, such as
+ * `Server: that is this device, which addons never reach`. Null when it names none.
+ */
+fun fieldError(settings: AddonSettings, message: String): Pair<String, String>? =
+    settings.fields.sortedByDescending { it.label.length }.firstOrNull { message.startsWith("${it.label}: ") }
+        ?.let { it.key to message.removePrefix("${it.label}: ").replaceFirstChar(Char::uppercaseChar) }

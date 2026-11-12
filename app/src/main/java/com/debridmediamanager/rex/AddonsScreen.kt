@@ -14,6 +14,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
 
 internal val client by lazy { AddonsClient() }
 
@@ -29,6 +31,17 @@ fun reach(hosts: List<String>): String = when {
     "*" in hosts -> "any website"
     hosts.isEmpty() -> "no websites"
     else -> hosts.joinToString(", ")
+}
+
+/**
+ * What an installed addon can reach: its manifest's `hosts`, and the addresses the person typed into
+ * its settings; [asks] when it has address settings still empty.
+ */
+fun reachLine(hosts: List<String>, granted: List<String>, asks: Boolean = false): String = when {
+    granted.isEmpty() && asks -> if (hosts.isEmpty()) "Can reach only the address you type below." else "Can reach ${reach(hosts)}, and the address you type below."
+    granted.isEmpty() -> "Can reach ${reach(hosts)}."
+    hosts.isEmpty() -> "Can reach only what you allowed: ${granted.joinToString(", ")}."
+    else -> "Can reach ${reach(hosts)}, and what you allowed: ${granted.joinToString(", ")}."
 }
 
 /**
@@ -270,7 +283,7 @@ private class PendingUpdate(val name: String, val warning: String, val update: (
     LaunchedEffect(Unit) { runCatching { start.requestFocus() } }
     ScrollPage {
         val current = settings
-        Title(current?.name ?: "Settings", "Addon settings")
+        Title(current?.name ?: "Settings", current?.let { reachLine(it.hosts, it.grantedHosts, it.fields.any { field -> field.type == "host" }) } ?: "Addon settings")
         when {
             current == null -> Panel { Text(problem.ifBlank { "Loading…" }) }
             current.fields.isEmpty() -> Panel { Text("This addon has no settings.") }
@@ -279,17 +292,28 @@ private class PendingUpdate(val name: String, val warning: String, val update: (
                     val value = input[field.key].orEmpty()
                     val change = { text: String -> input = input + (field.key to text) }
                     val label = field.label + if (field.required) " *" else ""
-                    val hint = errors[field.key] ?: when {
+                    val error = errors[field.key]
+                    val hint = error ?: listOfNotNull(field.help?.ifBlank { null }, when {
                         field.type == "secret" && secretSaved(current, field.key) -> "Saved. Leave it blank to keep it."
                         field.type == "list" -> "One per line"
-                        else -> ""
-                    }
+                        field.type == "host" && field.help.isNullOrBlank() -> "Like 192.168.1.20:8096"
+                        else -> null
+                    }).joinToString(". ")
                     when (field.type) {
                         "bool" -> Toggle(label, value == "true") { change(it.toString()) }
+                        // One button per choice: a remote moves across them, a finger taps one.
+                        "select" -> {
+                            Text(label)
+                            val shown = value.ifEmpty { (field.default as? JsonPrimitive)?.contentOrNull.orEmpty() }
+                            Buttons { field.options.forEach { option ->
+                                Action(if (option.value == shown) "✓ ${option.label}" else option.label, primary = option.value == shown) { change(option.value) }
+                            } }
+                        }
                         else -> Input(label, value, secret = field.type == "secret", hint = hint,
-                            multiline = field.type == "list", number = field.type == "number", onChange = change)
+                            multiline = field.type == "list", number = field.type == "number", link = field.type == "host", error = error != null, onChange = change)
                     }
-                    if (field.type == "bool" && hint.isNotBlank()) Text(hint, color = MaterialTheme.colorScheme.error)
+                    if ((field.type == "bool" || field.type == "select") && hint.isNotBlank())
+                        Text(hint, color = if (error != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
@@ -307,7 +331,16 @@ private class PendingUpdate(val name: String, val warning: String, val update: (
             if (current != null && current.fields.isNotEmpty()) Action("Save", !busy, primary = true) {
                 val checked = checkForm(current, input)
                 errors = checked.errors
-                if (checked.errors.isEmpty()) work.addonCall("Settings saved.") { client.configure(id, checked.body) }
+                if (checked.errors.isEmpty()) work.addonCall("Settings saved.") {
+                    try { client.configure(id, checked.body) }
+                    catch (e: ApiFailure) {
+                        // A refused value goes next to its field: "Server: that is this device, …".
+                        if (e.status == 400) fieldError(current, e.message.orEmpty())?.let { errors = mapOf(it) }
+                        throw e
+                    }
+                    // What it can reach follows the addresses just saved.
+                    runCatching { client.settings(id) }.onSuccess { settings = it }
+                }
             }
         }
         if (errors.isNotEmpty()) Text("Fix the fields marked above.", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.SemiBold)

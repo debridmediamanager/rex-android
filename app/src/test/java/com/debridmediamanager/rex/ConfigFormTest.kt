@@ -52,4 +52,27 @@ class ConfigFormTest {
         val form = AddonSettings("x", listOf(ConfigField("ids", type = "list", required = true)), emptyMap())
         assertEquals(mapOf("ids" to "Add at least one"), checkForm(form, mapOf("ids" to " , \n")).errors)
     }
+
+    // Host 0.6's select: the person picks a label, the host gets its value; blank puts back the default.
+    @Test fun aSelectSendsItsValue() {
+        val quality = ConfigField("quality", "Highest quality", "select", default = JsonPrimitive("1080"),
+            options = listOf(SelectOption("1080", "1080p"), SelectOption("720", "720p")))
+        val form = AddonSettings("x", listOf(quality, ConfigField("server", "Server", "host", required = true)), emptyMap())
+        assertEquals(mapOf("quality" to "1080", "server" to ""), initialForm(form))
+        val picked = checkForm(form, mapOf("quality" to "720", "server" to " 192.168.1.20:8096 "))
+        assertEquals(buildJsonObject { put("quality", "720"); put("server", "192.168.1.20:8096") }, picked.body)
+        assertEquals(JsonNull, checkForm(form, mapOf("quality" to "", "server" to "nas")).body["quality"])
+        assertEquals(mapOf("server" to "Required"), checkForm(form, mapOf("quality" to "720")).errors)
+        val noDefault = form.copy(fields = listOf(quality.copy(default = null, required = true)))
+        assertEquals(mapOf("quality" to "Pick one"), checkForm(noDefault, emptyMap()).errors)
+    }
+
+    // The host refuses a value as "<label>: <why>"; the form shows the why next to that field.
+    @Test fun aRefusedValueIsShownAtItsField() {
+        val form = AddonSettings("x", listOf(ConfigField("server", "Server", "host"), ConfigField("backup", "Server backup", "host")), emptyMap())
+        assertEquals("server" to "That is this device, which addons never reach",
+            fieldError(form, "Server: that is this device, which addons never reach"))
+        assertEquals("backup" to "Give an http:// or https:// address", fieldError(form, "Server backup: give an http:// or https:// address"))
+        assertNull(fieldError(form, "the addon host is busy"))
+    }
 }
