@@ -20,7 +20,8 @@ Nothing here has been done; no Play Console app exists yet and nothing is upload
    data safety answers say it is on.
 3. Publish `play/privacy-policy.md` at a public URL (notes.debridmediamanager.com fits) with a
    support email filled in.
-4. Make the graphics listed in `listing.md`.
+4. Graphics are made: `play/graphics/`, listed with Play's rules in `listing.md`. Decide on the
+   example Home Server addon they show (publish it in rex-addons, or drop those shots).
 
 ## Create the app
 
@@ -38,8 +39,9 @@ Nothing here has been done; no Play Console app exists yet and nothing is upload
    - Foreground service: declare special use, text and video per `fgs-special-use.md`.
    - Government app, financial features, health: no.
 7. Store listing: copy from `listing.md`; category Video Players & Editors.
-8. Android TV: under Advanced settings, Release types, add **Android TV**; upload the TV banner and
-   TV screenshots. Google reviews TV apps separately (D-pad only, no touch needed, banner present:
+8. Android TV: under Setup, Advanced settings, Form factors, add **Android TV**; upload
+   `tv-banner.png` and the TV screenshots, at least one of them from `tv/unaltered/`. The description
+   must say "Android TV" (it does). Google reviews TV apps separately (D-pad only, no touch needed, banner present:
    all done in the app).
 
 ## Upload and test
