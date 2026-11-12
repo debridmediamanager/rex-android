@@ -1,0 +1,16 @@
+{
+  "id": "home-server",
+  "name": "Home Server",
+  "version": "1.0.0",
+  "description": "Videos from a file server at home, such as a NAS. It reaches only the address you give it.",
+  "host": "0.7",
+  "hosts": [],
+  "config": [
+    {"key": "server", "label": "Server address", "type": "host", "required": true,
+     "help": "Your file server, such as 192.168.1.20:8096"},
+    {"key": "quality", "label": "Highest quality", "type": "select", "default": "1080",
+     "options": [{"value": "2160", "label": "4K"}, {"value": "1080", "label": "1080p"}, {"value": "720", "label": "720p"}],
+     "help": "Pick a lower one if videos stutter on Wi-Fi"}
+  ],
+  "refresh_minutes": 60
+}
