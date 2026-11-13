@@ -4,7 +4,7 @@
 apps. The Plex apps on your devices find it like any Plex server and play from it. What it
 plays comes from addons; the app starts with the Internet Archive's public domain films.
 
-Android 8.0 or newer. One APK fits phones and TVs; pick the one for your device's processor:
+[Download it from Releases](https://github.com/debridmediamanager/rex-android/releases/latest). Android 8.0 or newer. One APK fits phones and TVs; pick the one for your device's processor:
 `arm64-v8a` for most phones and TV boxes, `armeabi-v7a` for older or cheaper 32-bit boxes
 (Fire TV Sticks among them), `x86_64` for emulators. Google Play picks for you.
 
