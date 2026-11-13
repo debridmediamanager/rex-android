@@ -69,4 +69,8 @@ jobs:
         run: |
           gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1 ||
             gh release create "$GITHUB_REF_NAME" --draft --title "rex for Android $REX_ANDROID_VERSION" --generate-notes
+          # Unversioned copies keep releases/latest/download/rex-android-<abi>.apk a stable download link.
+          for apk in artifacts/rex-android-"$REX_ANDROID_VERSION"-*.apk; do
+            cp "$apk" "artifacts/rex-android-${apk#artifacts/rex-android-"$REX_ANDROID_VERSION"-}"
+          done
           gh release upload "$GITHUB_REF_NAME" artifacts/* --clobber
