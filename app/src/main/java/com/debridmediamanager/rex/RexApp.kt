@@ -80,7 +80,7 @@ class Runtime(val context: Context) {
     fun addonsProcess(): Process {
         val data = File(context.filesDir, "addons").apply { mkdirs() }
         val arguments = mutableListOf(addonsBinary.path, "--listen", "127.0.0.1:$ADDONS_PORT", "--rex", rexUrl,
-            "--data", data.path, "--ffprobe", ffprobe.path, "--device-name", serverName)
+            "--data", data.path, "--ffprobe", ffprobe.path)
         bundledAddons()?.let { arguments += listOf("--bundled", it.path) }
         // Read on the host's first start only; afterwards the person's own list stands.
         BuildConfig.DEFAULT_REPOS.forEach { arguments += listOf("--default-repo", it) }
