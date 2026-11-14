@@ -24,6 +24,8 @@ for one, pointing at the privacy policy. Sent logs are deleted on their own afte
 | App info and performance (crash logs, diagnostics) | Yes | No | App functionality (support) | Yes (sent only when the person presses Send) | Send logs to support uploads the app's logs of this run and the previous one, versions, device model, Android version, ABI, rex's state and each addon's status to logs.debridmediamanager.com, after showing all of it. Tokens, keys, passwords and the last two parts of public IPs are hidden; no settings values or Plex account. Only support staff can read it; deleted after 7 days |
 
 Notes for Ben before submitting:
+- Addon sign-ins are not collected either: the person enters a code on the addon's own website,
+  and the token that website gives back stays on the device and goes only to that website.
 - The Plex account token comes from plex.tv, goes back only to plex.tv (to ask for a claim
   code) and is then discarded. Plex issued it, so it is not listed as data the app collects.
 - **rex-direct sends the server token and IPs to debridmediamanager.com.** If that should not

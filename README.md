@@ -19,7 +19,7 @@ plays comes from addons; the app starts with the Internet Archive's public domai
   <img src="docs/screenshots/phone-youtube-code.png" width="32%" alt="Signing the YouTube addon in with a code">
 </p>
 <p>
-  <img src="docs/screenshots/phone-spotify-pair.png" width="32%" alt="Connecting the Spotify addon by picking this device in the Spotify app">
+  <img src="docs/screenshots/phone-spotify-code.png" width="32%" alt="Signing the Spotify addon in with a code at spotify.com/pair">
   <img src="docs/screenshots/plexamp-library.png" width="32%" alt="Plexamp showing the Spotify addon's library on this device">
   <img src="docs/screenshots/plexamp-player.png" width="32%" alt="Plexamp playing a track from the Spotify addon">
 </p>
@@ -55,10 +55,9 @@ explains what else your device needs.
 sync it now, change its settings, read its log, update it or remove it. Entries a sync had to
 leave out show as "2 left out"; its log says why. An addon that needs an account on its website shows
 **Sign in**: go to the page it names and enter the code on screen (on a TV, scan the QR code with
-your phone). rex notices once you did. A Spotify addon shows **Connect Spotify** instead: open
-Spotify on a phone on the same Wi-Fi, play any song, tap the devices button and pick this device by
-its rex name. Pairing needs the device on Wi-Fi or Ethernet; while it waits, the app keeps Wi-Fi
-passing the local announcements Spotify finds it by. An addon that works through another one says
+your phone). rex notices once you did. An addon this version of the app can no longer run, such as
+Spotify before 2.0, says **Needs an update**: refresh its repository and press **Update**; its
+titles stay meanwhile. An addon that works through another one says
 what that one needs, such as "Sign in to the YouTube addon first", and doesn't sync until then.
 An addon for a server of your own (a NAS, a media server) asks for its address in
 **Settings**, such as `192.168.1.20:8096`, and can then reach it, on that port only. An update that can

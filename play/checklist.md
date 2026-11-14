@@ -70,5 +70,9 @@ published. No Play Console app exists yet and nothing is uploaded there.
   repository by itself; the GitHub build adds rex-addons' own, which holds only Internet Archive.
   The Stremio, YouTube and Spotify addons are in rex-community-addons, which no build adds; keep
   that repository out of the store listing and the pages it links to.
+- **Permissions:** internet, network state, the foreground service (special use),
+  notifications and start at boot; nothing else. Addons sign in to websites with codes the person
+  enters on that website, and their tokens stay on the device. The addon host has no
+  Spotify code; rex-addons' `build-android.sh` refuses to build one that does.
 - **Battery:** the app does not request the battery exemption permission; it opens the system
   list and tells the person what to pick.
