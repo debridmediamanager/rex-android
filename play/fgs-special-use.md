@@ -17,9 +17,9 @@ server has to keep running while the person wants it on, which only a foreground
 has a Stop action; the Quick Settings tile and the app's Stop button end it too.
 
 **Video for the declaration** (Play asks for a link to one): recorded 2026-11-14 on an Android 15
-phone emulator with the 0.3.1 store build, 1080 x 2400, no sound: the home screen, rex opened
-(Stopped), Start pressed, rex running, the notification shade pulled down showing "rex: Running ·
-Ready for the Plex apps" with its Stop action, Stop pressed in the notification, the notification
-gone and the app showing Stopped. The file is kept outside the repository
+phone emulator with the 0.3.1 store build, 23 s, 1080 x 2400, no sound: rex open and Stopped,
+Start pressed, rex Starting then Running, the notification shade showing "rex: Running · Sign in to
+Plex to see it in the Plex apps." with its Stop action, Stop pressed in the notification, the
+notification gone, the shade closed on rex showing Stopped. The file is kept outside the repository
 (`.artifacts/rex-android/v031/fgs-declaration-video.mp4` in the workspace); upload it unlisted to
 YouTube (or Drive, shared by link) and paste that link into the declaration.
