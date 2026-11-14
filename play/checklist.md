@@ -1,78 +1,102 @@
-# Play Console: what Ben does
+# Store submission: what is decided and what Ben does
 
-Done so far: the app is released on GitHub, the graphics are made and the privacy policy is
-published. No Play Console app exists yet and nothing is uploaded there.
+Done in the repository: the GitHub releases, the store graphics (`graphics/`), the copy and form
+answers (`listing.md`, `amazon.md`, `data-safety.md`, `fgs-special-use.md`, the content rating
+below) and the published privacy policy. Release 0.3.0 is the first store build.
 
-## Before the first upload
+## Decided (2026-11-14)
 
-1. **Decide the signing setup.** The upload key is `~/.config/rex-android/upload.jks` (alias
-   `upload`, password in `upload.jks.password` beside it, both mode 600; SHA-256
-   `39:AF:C0:A2:DA:A2:CE:E0:64:8A:57:42:CA:DE:D9:42:F0:16:3C:F2:56:05:7A:EC:0A:FA:B4:98:CE:0F:67:28`).
-   Back both files up somewhere safe (Bitwarden): losing them means asking Google for an upload key reset.
-   - *Google-generated app signing key* (default): Play re-signs what it ships. The GitHub APKs
-     stay signed with the upload key, so a sideloaded copy and a Play copy cannot update each
-     other; switching means uninstalling (and losing that device's claim and addons).
-   - *Use this key as the app signing key* ("Use a different key" at enrollment, uploaded with
-     Play's PEPK tool), then create a new upload key: Play and GitHub copies then share one
-     identity and update each other. Choose this if sideloading on Fire TV matters.
-2. **Decide on rex-direct.** rex sends its server token and IP addresses to
-   debridmediamanager.com once signed in (see privacy-policy.md). Keep it (Plex apps reach rex over
-   HTTPS away from home) or ship the app with `REX_DIRECT_URL=off`. The privacy policy and the
-   data safety answers say it is on.
-3. Done: the privacy policy is at <https://notes.debridmediamanager.com/rex/android-privacy/>
-   (notes `rex/android-privacy.md`, a copy of `play/privacy-policy.md`: change both together).
-   Its contact is support@debridmediamanager.com.
-4. Graphics are made: `play/graphics/`, listed with Play's rules in `listing.md`. Upload the
-   shots `listing.md` names: the ones showing the example Home Server addon stay out, because no
-   repository offers it.
+| Question | Decision |
+|---|---|
+| Stores | Google Play closed test, then production after the 14-day test; an Amazon Appstore draft |
+| Play App Signing | Google's key (the default). The upload key stays the upload key, and the GitHub APKs stay signed with it |
+| What Play gets | `rex-android-X.Y.Z-play.aab`: the `play` flavor, no addon repository added, only the bundled Internet Archive addon |
+| What Amazon gets | `rex-android-X.Y.Z-amazon.apk`: the same `play` flavor as one APK (arm64-v8a + armeabi-v7a), because Amazon takes no AAB and its content rules are like Play's |
+| rex-direct | Stays on in the store builds; the privacy policy and data safety answers say so |
+| Testers | The Google Group `dmm-mobile-beta@googlegroups.com`, as for DMM Mobile |
+| Contact | `support@debridmediamanager.com` |
+| Website | `https://notes.debridmediamanager.com/rex/` |
+| Privacy policy | `https://notes.debridmediamanager.com/rex/android-privacy/` (notes `rex/android-privacy.md`, a copy of `privacy-policy.md`: change both together) |
+| Store text and images | Only what a store install gets: the Internet Archive addon, adding a repository by link, settings, the log, the Plex apps playing. No other addon, no debrid or torrent anything |
 
-## Create the app
+## Signing
 
-5. Create app: name `rex: home media server`, default language English, App, Free.
-6. App content:
-   - Privacy policy URL (step 3).
+The upload key is `~/.config/rex-android/upload.jks` (alias `upload`, password in
+`upload.jks.password` beside it, both mode 600; certificate SHA-256
+`39:AF:C0:A2:DA:A2:CE:E0:64:8A:57:42:CA:DE:D9:42:F0:16:3C:F2:56:05:7A:EC:0A:FA:B4:98:CE:0F:67:28`).
+`verify-release.sh` refuses any APK signed with another key. Back both files up in Bitwarden:
+losing them means asking Google for an upload key reset.
+
+With Google's app signing key, Play, Amazon and GitHub installs are three identities: none
+updates another, and switching means uninstalling (and losing that device's claim and addons).
+
+## Play Console
+
+1. Create app: name `rex: home media server`, default language English (United States), App, Free.
+2. App content:
+   - Privacy policy URL (above).
    - Ads: no ads.
-   - App access: all functions available without special access (a Plex account is the
-     person's own; give reviewers a note that a free Plex account works).
-   - Content rating questionnaire: a media server with no content of its own; addons can add
-     public domain films. Expect "Everyone"/PEGI 3 for the app itself; answer the
-     user-generated/third-party content questions honestly (addons are third-party code).
-   - Target audience: 18+ (not designed for children).
-   - Data safety: answers in `data-safety.md`.
-   - Foreground service: declare special use, text and video per `fgs-special-use.md`.
-   - Government app, financial features, health: no.
-7. Store listing: copy from `listing.md`; category Video Players & Editors.
-8. Android TV: under Setup, Advanced settings, Form factors, add **Android TV**; upload
-   `tv-banner.png` and the TV screenshots, at least one of them from `tv/unaltered/`. The description
-   must say "Android TV" (it does). Google reviews TV apps separately (D-pad only, no touch needed, banner present:
-   all done in the app).
+   - App access: all functionality is available without special access. Note for review:
+     "No account with us. Plex sign-in is optional and any free Plex account works; every rex
+     screen works without it. The bundled Internet Archive addon syncs about 100 public domain
+     films in 10 to 30 minutes."
+   - Content rating: the answers below.
+   - Target audience: 18 and over (not designed for children).
+   - Data safety: `data-safety.md`.
+   - Foreground service: special use, with the text and the video in `fgs-special-use.md`.
+   - Government app, financial features, health, news: no. Advertising ID: not used (no AD_ID
+     permission).
+3. Store listing: `listing.md` (copy, category, contact, graphics and which files to upload).
+4. Android TV: Setup, Advanced settings, Form factors, add **Android TV**; upload `tv-banner.png`
+   and the TV screenshots, `tv/unaltered/tv-status.png` first. The description says "Android TV".
+   Google reviews TV separately (D-pad only, no touch needed, banner present: all in the app).
+5. Closed testing: create the track, upload `rex-android-0.3.0-play.aab`, release notes from
+   `listing.md`, countries, testers = the Google Group above. Send for review.
+6. Once Play accepts the AAB, publish the GitHub draft release `v0.3.0` (its unversioned
+   `rex-android-<abi>.apk` copies become the `releases/latest/download` links only then).
+7. 12 testers opted in for 14 days in a row, then apply for production.
 
-## Upload and test
+### Content rating (IARC), proposed answers
 
-9. Push a `vX.Y.Z` tag. CI builds, signs and attaches the APKs, AAB and native source ZIP to a
-   **draft** GitHub release (needs the three `REX_ANDROID_*` secrets, already set on the repo).
-10. Upload `rex-android-X.Y.Z-play.aab` (the `play` flavor: no repository added, only the
-    bundled Internet Archive addon, so review sees public domain films working out of the box) to
-    an **internal testing** track, add testers, install from
-    Play on a phone and a Google TV, and check: rex starts, its programs run (Play installs the
-    split for the device), sign-in works, the Internet Archive addon syncs.
-11. Publish the GitHub draft release with the same files.
-12. Move to closed testing, then production. New personal developer accounts must run a closed
-    test with at least 12 testers for 14 days before production access.
+Category "All Other App Types", answered like DMM Mobile's (submitted 2026-11-10): the app's
+own screens hold no rated content, but the bundled addon serves films that are not in the
+download (public domain features from the Internet Archive: noir, horror and war films among
+them), which the Plex apps play, so it is rated like a streaming catalog.
+
+| Question | Answer | Why |
+|---|---|---|
+| Ratings-relevant content in the app package | No | The APK holds no films or images |
+| Users interact or exchange content | No | No chat, comments or sharing between users |
+| Features content not in the download | Yes | The Internet Archive films |
+| Violence: can contain it / primary purpose / visual / gory / only cartoony / in text | Yes / No / Yes / No / No / Yes | Classic crime, war and horror films |
+| Sexual material or nudity | No | Public domain features of 1910-1960s; none sexual |
+| Offensive language: can contain / focus / minor / moderate / discriminatory / sexual expletives | Yes / No / Yes / No / No / No | Mild language at most |
+| Drugs: references / focus / visual / in text | Yes / No / Yes / No | Smoking and drinking on screen |
+| Age-restricted products, location sharing, digital purchases, cash rewards, browser, news/education | No | |
+
+Expected: about ESRB Teen / PEGI 12 / IARC 12+, like DMM Mobile. If Ben prefers to rate only
+the app's own screens ("Utility", no content), the result would be Everyone / PEGI 3, but a
+reviewer who plays a noir film could call that wrong.
+
+## Amazon Appstore
+
+Everything is in `amazon.md`: fields, copy, content rating, data privacy, images, testing
+instructions. Upload `rex-android-0.3.0-amazon.apk`; leave it as a draft until Ben submits.
 
 ## Policy risks to watch in review
 
 - **Plex trademark:** the name and listing say the app works with the Plex apps and that it is
-  not made by Plex. Don't use Plex's logo or colours in graphics.
+  not made by Plex. The graphics use neither Plex's logo nor its colours.
 - **Third-party code (addons):** addons are JavaScript the app downloads from repositories the
   person adds and runs in a sandbox that reaches only the sites the addon names. Play allows
-  interpreted code that cannot reach Android APIs; say so if review asks. The Play build adds no
-  repository by itself; the GitHub build adds rex-addons' own, which holds only Internet Archive.
-  The Stremio, YouTube and Spotify addons are in rex-community-addons, which no build adds; keep
-  that repository out of the store listing and the pages it links to.
+  interpreted code that cannot reach Android APIs; say so if review asks. The store builds add no
+  repository; the GitHub build adds rex-addons' own, which holds only Internet Archive. Other
+  addons live in a community repository that no build adds; keep it out of the store listing and
+  the pages it links to.
 - **Permissions:** internet, network state, the foreground service (special use),
-  notifications and start at boot; nothing else. Addons sign in to websites with codes the person
-  enters on that website, and their tokens stay on the device. The addon host has no
-  Spotify code; rex-addons' `build-android.sh` refuses to build one that does.
+  notifications and start at boot; nothing else (no Wi-Fi permissions since 0.2.2;
+  `verify-release.sh` fails a build that asks for one). Addons sign in to websites with codes
+  the person enters on that website, and their tokens stay on the device. The addon host has no
+  Spotify code; `verify-release.sh` and rex-addons' `build-android.sh` refuse a build that does.
 - **Battery:** the app does not request the battery exemption permission; it opens the system
   list and tells the person what to pick.
