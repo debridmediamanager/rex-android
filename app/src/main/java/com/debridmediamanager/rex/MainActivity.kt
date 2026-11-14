@@ -27,6 +27,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.mapNotNull
 
 val LocalTelevision = staticCompositionLocalOf { false }
+/** Takes the notice bar's message away: every button press does, so an old answer never sits over the next page. */
+val LocalDismissNotice = staticCompositionLocalOf<() -> Unit> { {} }
 private val RexColors = darkColorScheme(primary = Color(0xFFFF8A65), onPrimary = Color(0xFF3B0D00),
     background = Color(0xFF131418), surface = Color(0xFF1C1E24), surfaceVariant = Color(0xFF2A2D35),
     onBackground = Color(0xFFE8E6E3), onSurface = Color(0xFFE8E6E3), secondary = Color(0xFFFFB59C),
@@ -76,7 +78,7 @@ class MainActivity : ComponentActivity() {
     }
     val pages = listOf("Status", "Addons", "Settings", "Logs")
     BackHandler(page != "Status" && page != "Setup") { navigate("Status") }
-    Surface(Modifier.fillMaxSize()) {
+    CompositionLocalProvider(LocalDismissNotice provides { notice = "" }) { Surface(Modifier.fillMaxSize()) {
         Column(Modifier.windowInsetsPadding(WindowInsets.safeDrawing)) {
             Row(Modifier.weight(1f)) {
                 if (wide && page != "Setup") Column(Modifier.width(if (LocalTelevision.current) 210.dp else 170.dp)
@@ -110,7 +112,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-    }
+    } }
 }
 
 @Composable fun StatusScreen(work: Work, busy: Boolean, navigate: (String) -> Unit) {
@@ -205,6 +207,8 @@ fun ago(seconds: Long): String =
 }
 
 @Composable fun Action(label: String, enabled: Boolean = true, primary: Boolean = false, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    val dismissNotice = LocalDismissNotice.current
+    val onClick = { dismissNotice(); onClick() }
     if (LocalTelevision.current) {
         // The TV theme's own defaults draw the focused button dark on a dark page: on a remote,
         // where focus is the only pointer, it has to stand out.
