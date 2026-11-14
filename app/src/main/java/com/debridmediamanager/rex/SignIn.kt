@@ -4,8 +4,6 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -53,21 +51,17 @@ data class AccountView(
 )
 
 fun accountView(addon: Addon, now: Long): AccountView {
+    // An installed addon of a sign-in kind this host no longer has: only an update brings it back.
+    if (addon.errorKind == "update") return AccountView(NEEDS_UPDATE, signOut = addon.signIn?.account != null, canSync = false)
     val signIn = addon.signIn ?: return AccountView(error = addonError(addon.error), force = syncAnyway(addon))
     // "Nobody is signed in" says what the button already does.
     val error = signIn.error?.ifBlank { null }?.let { "That didn't work: $it" }
         ?: addonError(addon.error)?.takeIf { addon.errorKind != "sign_in" }
     signIn.account?.let { account ->
-        return AccountView(signedInAs(signIn.spotify, account), error, signOut = true, force = syncAnyway(addon))
+        return AccountView(signedInAs(account), error, signOut = true, force = syncAnyway(addon))
     }
     val pending = signIn.pending
     val label = signIn.label?.ifBlank { null }
-    if (signIn.spotify) return when {
-        pending != null && pending.expiresAt > now ->
-            AccountView("Waiting for you to pick it in Spotify…", error, label ?: "Connect Spotify", waiting = true, canSync = false)
-        pending != null -> AccountView("Spotify didn't see a pick in time.", error, "Try again", canSync = false)
-        else -> AccountView("Connect to start.", error, label ?: "Connect Spotify", canSync = false)
-    }
     return when {
         pending != null && pending.expiresAt > now ->
             AccountView("Waiting for you to enter the code…", error, "Enter the code", waiting = true, canSync = false)
@@ -83,19 +77,10 @@ fun addonError(error: String?): String? = error?.ifBlank { null }?.let {
     askedToWait.matchEntire(it)?.let { wait -> "The website asked rex to wait. It tries again ${retryIn(wait.groupValues[1].toLong())}." } ?: it
 }
 
-/** "Signed in as …", or "Connected as …" for a Spotify device. */
-fun signedInAs(spotify: Boolean, account: String): String {
-    val verb = if (spotify) "Connected" else "Signed in"
-    return account.ifBlank { null }?.let { "$verb as $it" } ?: verb
-}
+/** What an addon that needs an update says, instead of its error. */
+const val NEEDS_UPDATE = "This version no longer works. Update it from its repository."
 
-/**
- * Whether the app holds Wi-Fi's multicast lock: while some addon waits for someone to pick this device
- * in the Spotify app, which finds it by multicast DNS that Wi-Fi drops otherwise.
- */
-fun wantsMulticast(host: HostStatus?, now: Long): Boolean = host?.addons.orEmpty().any { addon ->
-    addon.signIn?.let { it.spotify && it.account == null && (it.pending?.expiresAt ?: 0) > now } == true
-}
+fun signedInAs(account: String): String = account.ifBlank { null }?.let { "Signed in as $it" } ?: "Signed in"
 
 /** The addon whose code should be on screen when the app starts: one waiting, with nobody signed in yet. */
 fun waitingSignIn(host: HostStatus, now: Long): String? = host.addons.firstOrNull { addon ->
@@ -116,24 +101,7 @@ fun showFresh(addon: Addon) = Status.addons.update { state ->
 /** Unix seconds, ticking every second while on screen. */
 @Composable fun clock(): Long = produceState(epochNow()) { while (true) { delay(1_000); value = epochNow() } }.value
 
-/**
- * Best effort: whether this device is on Wi-Fi or Ethernet, where a phone's Spotify app can find it.
- * Any such network counts, so a VPN on top doesn't hide it.
- */
-fun onLocalNetwork(context: Context): Boolean {
-    val connectivity = context.getSystemService(ConnectivityManager::class.java) ?: return true
-    @Suppress("DEPRECATION")
-    return connectivity.allNetworks.any { network ->
-        connectivity.getNetworkCapabilities(network)?.let {
-            it.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) || it.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)
-        } == true
-    }
-}
-
-/**
- * The code and where to enter it, until the host sees someone did; for Spotify, the steps to pick this
- * device in the Spotify app instead.
- */
+/** The code and where to enter it, until the host sees someone did. */
 @Composable fun SignInScreen(id: String, work: Work, busy: Boolean, close: () -> Unit) {
     val context = LocalContext.current
     val television = LocalTelevision.current
@@ -153,7 +121,6 @@ fun onLocalNetwork(context: Context): Boolean {
     val start = remember { FocusRequester() }
     val again = remember { FocusRequester() }
     LaunchedEffect(Unit) { runCatching { start.requestFocus() } }
-    val spotify = addon?.signIn?.spotify == true
     val pending = addon?.signIn?.pending?.takeIf { account == null }
     val live = pending != null && pending.expiresAt > now
     val renew = addon != null && account == null && !live
@@ -166,21 +133,7 @@ fun onLocalNetwork(context: Context): Boolean {
         when {
             addon == null -> Panel { Text("Start rex to sign in.") }
             account != null -> Panel {
-                Text(signedInAs(spotify, account), color = MaterialTheme.colorScheme.primary, fontSize = 28.sp, lineHeight = 34.sp)
-            }
-            pending != null && live && spotify -> Panel {
-                // Read from across a room on a TV.
-                val step = if (television) 28.sp else 20.sp
-                listOf("1. Open Spotify on a phone that's on the same Wi-Fi.", "2. Play any song.", "3. Tap the devices button and pick")
-                    .forEach { Text(it, fontSize = step, lineHeight = step * 1.3f) }
-                val big = if (television) 56.sp else 34.sp
-                Text(pending.device?.ifBlank { null } ?: context.runtime.serverName, color = MaterialTheme.colorScheme.primary,
-                    fontSize = big, lineHeight = big * 1.15f, fontWeight = FontWeight.Bold)
-                // Spotify finds the device on the local network only.
-                if (onLocalNetwork(context)) Text("Waiting for you to pick it in Spotify…")
-                else Text("Pairing needs this ${if (television) "TV" else "device"} on the same Wi-Fi as your phone. Connect it to Wi-Fi or Ethernet.",
-                    color = MaterialTheme.colorScheme.error)
-                Text("This works for ${countdown(pending.expiresAt - now)} more.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(signedInAs(account), color = MaterialTheme.colorScheme.primary, fontSize = 28.sp, lineHeight = 34.sp)
             }
             pending != null && live -> Panel {
                 Row(horizontalArrangement = Arrangement.spacedBy(32.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -205,8 +158,6 @@ fun onLocalNetwork(context: Context): Boolean {
             }
             else -> Panel {
                 Text(when {
-                    spotify && pending != null -> "Spotify didn't see a pick in time."
-                    spotify -> "Not waiting for Spotify right now."
                     pending != null -> "That code ran out."
                     else -> "No code right now."
                 })
@@ -214,7 +165,7 @@ fun onLocalNetwork(context: Context): Boolean {
             }
         }
         Buttons {
-            if (pending != null && live && !television && !spotify) {
+            if (pending != null && live && !television) {
                 Action("Open the page", primary = true) {
                     runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, pending.url.toUri()).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
                 }
@@ -222,12 +173,12 @@ fun onLocalNetwork(context: Context): Boolean {
                     clipboard.setPrimaryClip(ClipData.newPlainText("Code", pending.code)); copied = true
                 }
             }
-            if (renew) Action(if (spotify) "Try again" else "Get a new code", !busy && addon?.enabled == true, primary = true, modifier = Modifier.focusRequester(again)) {
+            if (renew) Action("Get a new code", !busy && addon?.enabled == true, primary = true, modifier = Modifier.focusRequester(again)) {
                 work { showFresh(client.signIn(id)); "" }
             }
             // One button throughout, so a remote's focus stays on it as the screen changes.
             Action(when { account != null -> "Done"; addon == null -> "Back"; else -> "Cancel" }, modifier = Modifier.focusRequester(start)) {
-                if (addon != null && account == null) work.addonCall(if (spotify) "Pairing cancelled." else "Sign-in cancelled.") { client.signOut(id) }
+                if (addon != null && account == null) work.addonCall("Sign-in cancelled.") { client.signOut(id) }
                 close()
             }
         }

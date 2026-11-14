@@ -90,6 +90,8 @@ fun syncAnyway(addon: Addon) = addon.errorKind == "would_remove" && addon.signIn
  * all are. Named as installed, else by its id.
  */
 fun unmetNeed(addon: Addon, installed: List<Addon>): String? {
+    // The update comes first: the new version may need other addons, or none.
+    if (addon.errorKind == "update") return null
     val need = addon.requires.firstOrNull { !it.ok } ?: return null
     val name = installed.firstOrNull { it.id == need.id }?.name?.ifBlank { null } ?: need.id.replaceFirstChar(Char::uppercaseChar)
     return when (need.reason) {
@@ -168,7 +170,7 @@ private class PendingUpdate(val name: String, val warning: String, val update: (
                         }
                         Action("Settings", !busy) { editing = addon.id }
                         Action("Log") { reading = addon.id }
-                        if (account.signOut) Action(if (addon.signIn?.spotify == true) "Disconnect" else "Sign out", !busy) { signingOut = addon }
+                        if (account.signOut) Action("Sign out", !busy) { signingOut = addon }
                         Action("Remove", !busy) { removing = addon }
                     }
                 }
@@ -215,12 +217,11 @@ private class PendingUpdate(val name: String, val warning: String, val update: (
             dismissButton = { Action("Cancel") { removing = null } })
     }
     signingOut?.let { addon ->
-        val spotify = addon.signIn?.spotify == true
-        AlertDialog(onDismissRequest = { signingOut = null }, title = { Text(if (spotify) "Disconnect ${addon.name}?" else "Sign out of ${addon.name}?") },
-            text = { Text("Its titles stay, but it stops updating until you ${if (spotify) "connect" else "sign in"} again.") },
-            confirmButton = { Action(if (spotify) "Disconnect" else "Sign out", primary = true) {
+        AlertDialog(onDismissRequest = { signingOut = null }, title = { Text("Sign out of ${addon.name}?") },
+            text = { Text("Its titles stay, but it stops updating until you sign in again.") },
+            confirmButton = { Action("Sign out", primary = true) {
                 signingOut = null
-                work.addonCall(if (spotify) "Disconnected ${addon.name}." else "Signed out of ${addon.name}.") { client.signOut(addon.id) }
+                work.addonCall("Signed out of ${addon.name}.") { client.signOut(addon.id) }
             } },
             dismissButton = { Action("Cancel") { signingOut = null } })
     }

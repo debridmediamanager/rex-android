@@ -1,7 +1,0 @@
-{
-    "_comment": "Hand-written from the host 0.5.0 contract (Spotify Connect pairing, requires); no host answers it yet. Replace with a recorded answer once one does.",
-    "id": "spotify", "name": "Spotify", "version": "1.0.0", "description": "Your Spotify playlists, played from YouTube.", "enabled": true, "repo": "rex-addons", "update_available": false, "hosts": ["*.spotify.com", "*.spclient.spotify.com"],
-    "state": "idle", "items": 42, "held": 0, "last_sync": 1794328362, "error": null, "error_kind": null,
-    "sign_in": {"kind": "spotify", "label": "Connect Spotify", "account": "music.fan", "pending": null, "error": null},
-    "requires": [{"id": "youtube", "ok": true, "reason": null}]
-}

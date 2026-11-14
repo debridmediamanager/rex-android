@@ -1,0 +1,79 @@
+{
+    "version": "0.9.0",
+    "rex": {
+        "url": "http://127.0.0.1:32400",
+        "reachable": true
+    },
+    "addons": [
+        {
+            "id": "internet-archive",
+            "name": "Internet Archive",
+            "version": "1.1.0",
+            "description": "Public domain feature films from archive.org: classics, silents, noir and B-movies, streamed straight from the Internet Archive.",
+            "enabled": true,
+            "repo": null,
+            "hosts": [
+                "archive.org",
+                "*.archive.org"
+            ],
+            "granted_hosts": [],
+            "state": "syncing",
+            "items": 0,
+            "held": 0,
+            "last_sync": null,
+            "error": null,
+            "error_kind": null,
+            "warnings": {
+                "count": 0,
+                "first": []
+            },
+            "sign_in": null,
+            "requires": [],
+            "update_available": false,
+            "update_hosts": null,
+            "update_host_settings": null
+        },
+        {
+            "id": "spotify",
+            "name": "Spotify",
+            "version": "1.0.1",
+            "description": "Your Spotify library as music in Plex and Plexamp: liked songs, your playlists and saved albums, with Spotify's titles, albums and covers, and each playlist in Spotify's order. Connect by picking this device in the Spotify app. The sound comes from YouTube, through the YouTube addon (needed, signed in): each song plays as its recording there, so now and then a version differs.",
+            "enabled": true,
+            "repo": "github-com-debridmediamanager-rex-community-addons",
+            "hosts": [
+                "*.googlevideo.com"
+            ],
+            "granted_hosts": [],
+            "state": "error",
+            "items": 3,
+            "held": 0,
+            "last_sync": 1794600000,
+            "error": "this addon needs an update: update Spotify in its repository",
+            "error_kind": "update",
+            "warnings": {
+                "count": 0,
+                "first": []
+            },
+            "sign_in": {
+                "label": "Connect Spotify",
+                "kind": "spotify",
+                "account": "Someone Listening",
+                "error": null,
+                "pending": null
+            },
+            "requires": [
+                {
+                    "id": "youtube",
+                    "ok": false,
+                    "reason": "not installed"
+                }
+            ],
+            "update_available": true,
+            "update_hosts": [
+                "*.spotify.com",
+                "*.googlevideo.com"
+            ],
+            "update_host_settings": []
+        }
+    ]
+}

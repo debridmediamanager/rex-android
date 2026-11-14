@@ -90,29 +90,27 @@ class SignInTest {
     }
 
 
-    // Host 0.5.0's Spotify pairing: no code, a device to pick in the Spotify app. Hand-written fixtures.
-    @Test fun aSpotifyPairingSaysPickItInSpotify() {
-        val addon = addon("spotify-pending")
-        assertEquals(AccountView("Waiting for you to pick it in Spotify…", signIn = "Connect Spotify", waiting = true, canSync = false),
-            accountView(addon, before))
-        assertEquals(AccountView("Spotify didn't see a pick in time.", signIn = "Try again", canSync = false), accountView(addon, after))
-        val idle = addon.copy(signIn = addon.signIn!!.copy(pending = null), error = null)
-        assertEquals(AccountView("Connect to start.", signIn = "Connect Spotify", canSync = false), accountView(idle, before))
-        assertEquals(AccountView("Connected as music.fan", signOut = true), accountView(addon("spotify-connected"), before))
-        assertEquals("Connected", signedInAs(true, ""))
-        // A waiting pairing comes back on screen when the app starts, as a waiting code does.
-        assertEquals("spotify", waitingSignIn(HostStatus(addons = listOf(addon)), before))
+    // Host 0.9 dropped 0.8's Spotify pairing; an addon still installed with it waits for its update.
+    // Recorded from host 0.9.0 with Spotify 1.0.1 (rex-addons tests/fixtures) installed under it.
+    @Test fun anAddonOfARetiredSignInKindAsksForAnUpdate() {
+        val spotify = json.decodeFromString(HostStatus.serializer(), fixture("status-0.9-update")).addons.single { it.id == "spotify" }
+        assertEquals("update", spotify.errorKind)
+        // Without its last sync: "synced … ago" needs Android's DateUtils.
+        assertEquals("Needs an update · 3 titles", addonSummary(spotify.copy(lastSync = null)))
+        // A plain line instead of the raw error or a sign-in button; it can still sign out, not sync.
+        assertEquals(AccountView(NEEDS_UPDATE, signOut = true, canSync = false), accountView(spotify, before))
+        assertEquals(AccountView(NEEDS_UPDATE, canSync = false), accountView(spotify.copy(signIn = spotify.signIn!!.copy(account = null)), before))
+        // Its old requirements don't matter until it is updated.
+        assertNull(unmetNeed(spotify, emptyList()))
     }
 
-    @Test fun theMulticastLockIsHeldOnlyWhileSpotifyCanPickThisDevice() {
-        val pairing = addon("spotify-pending")
-        assertTrue(wantsMulticast(HostStatus(addons = listOf(addon("sign-in-none"), pairing)), before))
-        assertFalse("ran out", wantsMulticast(HostStatus(addons = listOf(pairing)), after))
-        assertFalse("connected", wantsMulticast(HostStatus(addons = listOf(addon("spotify-connected"))), before))
-        assertFalse("cancelled", wantsMulticast(HostStatus(addons = listOf(pairing.copy(signIn = pairing.signIn!!.copy(pending = null)))), before))
-        // A code sign-in needs nothing from the local network.
-        assertFalse("code", wantsMulticast(HostStatus(addons = listOf(addon("sign-in-pending"))), before))
-        assertFalse("no host", wantsMulticast(null, before))
+    // "code" is the only kind host 0.9 has; any other shows as one.
+    @Test fun aSignInOfAnotherKindShowsAsACode() {
+        val pending = addon("sign-in-pending").let { it.copy(signIn = it.signIn!!.copy(kind = "spotify")) }
+        assertEquals(AccountView("Waiting for you to enter the code…", signIn = "Enter the code", waiting = true, canSync = false),
+            accountView(pending, before))
+        val signedIn = addon("signed-in").let { it.copy(signIn = it.signIn!!.copy(kind = "spotify")) }
+        assertEquals(AccountView("Signed in as film.fan@example.com", signOut = true), accountView(signedIn, before))
     }
 
     @Test fun anUnmetRequirementSaysWhatToDoInOneLine() {
@@ -128,6 +126,6 @@ class SignInTest {
         assertEquals("Needs the YouTube addon.", need(null))
         // Not installed, so only its id names it.
         assertEquals("Needs the Youtube addon: install it and sign in.", unmetNeed(spotify.copy(requires = listOf(Requirement("youtube", false, "not installed"))), emptyList()))
-        assertNull(unmetNeed(addon("spotify-connected"), host.addons))
+        assertNull(unmetNeed(addon("signed-in"), host.addons))
     }
 }

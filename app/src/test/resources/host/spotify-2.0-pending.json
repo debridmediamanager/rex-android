@@ -1,0 +1,102 @@
+{
+    "id": "spotify",
+    "name": "Spotify",
+    "version": "2.0.0",
+    "description": "Your Spotify library as music in Plex and Plexamp: liked songs, your playlists and saved albums, with Spotify's titles, albums and covers, and each playlist in Spotify's order. Sign in with a code at spotify.com/pair. The sound comes from YouTube, through the YouTube addon (needed, signed in): each song plays as its recording there, so now and then a version differs.",
+    "enabled": true,
+    "repo": "github-com-debridmediamanager-rex-community-addons",
+    "hosts": [
+        "*.spotify.com",
+        "*.googlevideo.com"
+    ],
+    "granted_hosts": [],
+    "state": "error",
+    "items": 3,
+    "held": 0,
+    "last_sync": null,
+    "error": "sign in again: this update signs in to Spotify with a code",
+    "error_kind": "sign_in",
+    "warnings": {
+        "count": 0,
+        "first": []
+    },
+    "sign_in": {
+        "label": "Sign in to Spotify",
+        "kind": "code",
+        "account": null,
+        "error": null,
+        "pending": {
+            "code": "3ARY64",
+            "url": "https://spotify.com/pair",
+            "expires_at": 1794667137
+        }
+    },
+    "requires": [
+        {
+            "id": "youtube",
+            "ok": false,
+            "reason": "not installed"
+        }
+    ],
+    "update_available": false,
+    "update_hosts": null,
+    "update_host_settings": null,
+    "manifest": {
+        "$schema": "../../types/manifest.schema.json",
+        "id": "spotify",
+        "name": "Spotify",
+        "version": "2.0.0",
+        "description": "Your Spotify library as music in Plex and Plexamp: liked songs, your playlists and saved albums, with Spotify's titles, albums and covers, and each playlist in Spotify's order. Sign in with a code at spotify.com/pair. The sound comes from YouTube, through the YouTube addon (needed, signed in): each song plays as its recording there, so now and then a version differs.",
+        "host": "0.5",
+        "sign_in": {
+            "label": "Sign in to Spotify"
+        },
+        "requires": [
+            "youtube"
+        ],
+        "hosts": [
+            "*.spotify.com",
+            "*.googlevideo.com"
+        ],
+        "directories": [
+            {
+                "name": "spotify",
+                "music": "Spotify"
+            }
+        ],
+        "config": [
+            {
+                "key": "liked",
+                "label": "Liked Songs",
+                "type": "bool",
+                "default": true
+            },
+            {
+                "key": "playlists",
+                "label": "Your playlists",
+                "type": "bool",
+                "default": true
+            },
+            {
+                "key": "albums",
+                "label": "Saved albums",
+                "type": "bool",
+                "default": true
+            },
+            {
+                "key": "matches_per_sync",
+                "label": "New songs to look for on YouTube each sync (an hour apart)",
+                "type": "number",
+                "default": 30
+            }
+        ],
+        "refresh_minutes": 60
+    },
+    "config": {
+        "liked": true,
+        "playlists": true,
+        "albums": true,
+        "matches_per_sync": 30
+    },
+    "deleted": 0
+}

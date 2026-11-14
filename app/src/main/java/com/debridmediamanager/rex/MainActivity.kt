@@ -161,7 +161,7 @@ class MainActivity : ComponentActivity() {
 }
 
 fun addonSummary(addon: Addon): String = listOfNotNull(
-    if (!addon.enabled) "Off" else when (addon.state) { "syncing" -> "Syncing"; "error" -> if (addon.errorKind == "sign_in") "Sign in needed" else "Problem"; else -> "Ready" },
+    if (!addon.enabled) "Off" else when (addon.state) { "syncing" -> "Syncing"; "error" -> when (addon.errorKind) { "sign_in" -> "Sign in needed"; "update" -> "Needs an update"; else -> "Problem" }; else -> "Ready" },
     "${addon.items} ${if (addon.items == 1L) "title" else "titles"}",
     // Sent without a probe: rex holds them unshown until a later sync checks them.
     if (addon.held > 0) "${addon.held} not shown yet" else null,

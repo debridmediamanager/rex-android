@@ -35,7 +35,8 @@ object AddonsToken {
     @SerialName("last_sync") val lastSync: Long? = null, val error: String? = null,
     /**
      * "would_remove" when rex refused the last sync for removing more than half of the titles;
-     * "sign_in" when it isn't syncing because nobody is signed in (or the website signed it out).
+     * "sign_in" when it isn't syncing because nobody is signed in (or the website signed it out);
+     * "update" (host 0.9) when it needs an update from its repository before it syncs or signs in again.
      */
     @SerialName("error_kind") val errorKind: String? = null,
     val repo: String? = null, @SerialName("update_available") val updateAvailable: Boolean = false,
@@ -60,18 +61,14 @@ object AddonsToken {
 /** The addon's account on its website. The host watches for the code itself; the app only reads this. */
 @Serializable data class SignIn(
     val label: String? = null, val account: String? = null, val pending: PendingSignIn? = null, val error: String? = null,
-    /** "code", or "spotify" for Spotify Connect pairing (host 0.5.0); hosts before that send none, meaning "code". */
+    /**
+     * "code" (none before host 0.5.0). Any other is a kind this host no longer has, such as 0.8's
+     * "spotify", reported with `error_kind` "update"; it shows as a code.
+     */
     val kind: String? = null,
-) {
-    val spotify: Boolean get() = kind == "spotify"
-}
-/**
- * A code to enter at [url] before [expiresAt] (Unix seconds); for Spotify, the [device] name to pick in
- * the Spotify app's device list, with no code or url.
- */
-@Serializable data class PendingSignIn(
-    val code: String = "", val url: String = "", @SerialName("expires_at") val expiresAt: Long, val device: String? = null,
 )
+/** A code to enter at [url] before [expiresAt] (Unix seconds). */
+@Serializable data class PendingSignIn(val code: String = "", val url: String = "", @SerialName("expires_at") val expiresAt: Long)
 /** Another addon this one needs, and why it isn't usable yet: "not installed", "disabled" or "sign in needed". */
 @Serializable data class Requirement(val id: String, val ok: Boolean = true, val reason: String? = null)
 /** A git repository addons are installed from. */
@@ -128,7 +125,7 @@ class AddonsClient(
     fun status(): HostStatus = json.decodeFromString(call("GET", url("api", "status")))
 
     fun addon(id: String): Addon = json.decodeFromString(call("GET", url("api", "addons", id)))
-    /** Starts (or restarts) a sign-in; the answer carries the code, or the Spotify device name, in `sign_in.pending`. */
+    /** Starts (or restarts) a sign-in; the answer carries the code in `sign_in.pending`. */
     fun signIn(id: String): Addon = json.decodeFromString(call("POST", url("api", "addons", id, "sign-in"), JsonObject(emptyMap())))
     /** Signs out, or drops a code nobody entered. */
     fun signOut(id: String): Addon = json.decodeFromString(call("DELETE", url("api", "addons", id, "sign-in")))
