@@ -16,6 +16,10 @@ server has to keep running while the person wants it on, which only a foreground
 (or, if they turned it on, when the device boots). Its notification shows the server's state and
 has a Stop action; the Quick Settings tile and the app's Stop button end it too.
 
-**Video for the declaration** (Play asks for one): record on a phone: open rex, press Start,
-pull down the notification, open a Plex app on another device and play a film, then press Stop
-in the notification.
+**Video for the declaration** (Play asks for a link to one): recorded 2026-11-14 on an Android 15
+phone emulator with the 0.3.1 store build, 1080 x 2400, no sound: the home screen, rex opened
+(Stopped), Start pressed, rex running, the notification shade pulled down showing "rex: Running ·
+Ready for the Plex apps" with its Stop action, Stop pressed in the notification, the notification
+gone and the app showing Stopped. The file is kept outside the repository
+(`.artifacts/rex-android/v031/fgs-declaration-video.mp4` in the workspace); upload it unlisted to
+YouTube (or Drive, shared by link) and paste that link into the declaration.

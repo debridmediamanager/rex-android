@@ -18,7 +18,7 @@ console's traps).
 
 | Field | Value |
 |---|---|
-| APK | `rex-android-0.3.0-amazon.apk` from the GitHub release (the `play` flavor: no addon repository added, only the bundled Internet Archive addon; one APK with arm64-v8a and armeabi-v7a, signed with the upload key) |
+| APK | `rex-android-0.3.1-amazon.apk` from the GitHub release (the `play` flavor: no addon repository added, only the bundled Internet Archive addon; one APK with arm64-v8a and armeabi-v7a, signed with the upload key) |
 | Apply Amazon DRM | No |
 | App SKU | `rex-android` |
 | Language | English |

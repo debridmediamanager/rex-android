@@ -23,7 +23,7 @@ for one, pointing at the privacy policy. Sent logs are deleted on their own afte
 | App activity, Web browsing | No | No | | | Watch history stays on the device and in the person's own Plex account |
 | App info and performance (crash logs, diagnostics) | Yes | No | App functionality (support) | Yes (sent only when the person presses Send) | Send logs to support uploads the app's logs of this run and the previous one, versions, device model, Android version, ABI, rex's state and each addon's status to logs.debridmediamanager.com, after showing all of it. Tokens, keys, passwords and the last two parts of public IPs are hidden; no settings values or Plex account. Only support staff can read it; deleted after 7 days |
 
-Notes behind these answers (checked against 0.3.0: addon host 0.9, store flavor):
+Notes behind these answers (checked against 0.3.1: addon host 0.9, store flavor):
 - Addon sign-ins are not collected either: the person enters a code on the addon's own website,
   and the token that website gives back stays on the device and goes only to that website. The
   store build's only addon, Internet Archive, has no sign-in.

@@ -1,6 +1,6 @@
 # Store listing
 
-Google Play copy for rex for Android 0.3.0, the first store release. The Amazon Appstore copy,
+Google Play copy for rex for Android 0.3.1, the first store release. The Amazon Appstore copy,
 adapted from this, is in [amazon.md](amazon.md). Paste each block as it is.
 
 Store text and images show only what a store install gets: the bundled Internet Archive addon,
@@ -45,7 +45,7 @@ What it plays comes from addons. rex comes with one: the Internet Archive's publ
 rex is not made by or affiliated with Plex, Inc. A free Plex account is enough.
 ```
 
-**Release notes for 0.3.0** (Play's "What's new", 500 max):
+**Release notes for 0.3.1** (Play's "What's new", 500 max):
 
 ```text
 First release on Google Play.

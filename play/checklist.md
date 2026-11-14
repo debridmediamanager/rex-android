@@ -2,7 +2,7 @@
 
 Done in the repository: the GitHub releases, the store graphics (`graphics/`), the copy and form
 answers (`listing.md`, `amazon.md`, `data-safety.md`, `fgs-special-use.md`, the content rating
-below) and the published privacy policy. Release 0.3.0 is the first store build.
+below) and the published privacy policy. Release 0.3.1 is the first store build (0.3.0 was tagged, but its build was stopped for the Stop notification fix in 0.3.1; don't use it).
 
 ## Decided (2026-11-14)
 
@@ -50,9 +50,9 @@ updates another, and switching means uninstalling (and losing that device's clai
 4. Android TV: Setup, Advanced settings, Form factors, add **Android TV**; upload `tv-banner.png`
    and the TV screenshots, `tv/unaltered/tv-status.png` first. The description says "Android TV".
    Google reviews TV separately (D-pad only, no touch needed, banner present: all in the app).
-5. Closed testing: create the track, upload `rex-android-0.3.0-play.aab`, release notes from
+5. Closed testing: create the track, upload `rex-android-0.3.1-play.aab`, release notes from
    `listing.md`, countries, testers = the Google Group above. Send for review.
-6. Once Play accepts the AAB, publish the GitHub draft release `v0.3.0` (its unversioned
+6. Once Play accepts the AAB, publish the GitHub draft release `v0.3.1` (its unversioned
    `rex-android-<abi>.apk` copies become the `releases/latest/download` links only then).
 7. 12 testers opted in for 14 days in a row, then apply for production.
 
@@ -81,7 +81,7 @@ reviewer who plays a noir film could call that wrong.
 ## Amazon Appstore
 
 Everything is in `amazon.md`: fields, copy, content rating, data privacy, images, testing
-instructions. Upload `rex-android-0.3.0-amazon.apk`; leave it as a draft until Ben submits.
+instructions. Upload `rex-android-0.3.1-amazon.apk`; leave it as a draft until Ben submits.
 
 ## Policy risks to watch in review
 
