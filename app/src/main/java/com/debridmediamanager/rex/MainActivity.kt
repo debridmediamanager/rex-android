@@ -41,6 +41,9 @@ class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Force-stopped by the system or a battery saver, rex comes back with nobody starting it: the
+        // person who opens the app after that never pressed Stop.
+        if (savedInstanceState == null && runtime.wanted && runtime.setupDone && !Status.rex.value.running) RexService.send(this)
         val television = (getSystemService(UI_MODE_SERVICE) as UiModeManager).currentModeType == Configuration.UI_MODE_TYPE_TELEVISION
         setContent {
             CompositionLocalProvider(LocalTelevision provides television) {
