@@ -224,10 +224,11 @@ fun ago(seconds: Long): String =
     else OutlinedButton(onClick = onClick, enabled = enabled, modifier = modifier) { Text(label) }
 }
 
-/** A row of buttons that scrolls sideways when it is too wide, with room for a TV button's focus zoom. */
+/** A row of buttons that wraps onto more rows when it is too wide, with room for a TV button's focus zoom. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable fun Buttons(content: @Composable RowScope.() -> Unit) {
-    Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 6.dp, vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp), content = content)
+    FlowRow(Modifier.padding(horizontal = 6.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)) { content() }
 }
 
 @Composable fun Title(text: String, subtitle: String = "") {
