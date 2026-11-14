@@ -150,6 +150,9 @@ import kotlinx.coroutines.withContext
     LaunchedEffect(port, rex.running) {
         portTaken = withContext(Dispatchers.IO) { parsePort(port)?.let { !rex.running && portInUse(it) } ?: false }
     }
+    // Start rex, which had focus, goes away with step 1: without this a remote finds nothing lit there.
+    val next = remember { FocusRequester() }
+    LaunchedEffect(step) { if (step == 1) runCatching { next.requestFocus() } }
     ScrollPage {
         Text("${step + 1} / 2", color = MaterialTheme.colorScheme.primary)
         if (step == 0) {
@@ -179,7 +182,7 @@ import kotlinx.coroutines.withContext
             PlexPanel(work, busy)
             Buttons {
                 Action("Back", !busy) { step = 0 }
-                Action(if (rex.claimed) "Done" else "Skip for now", !busy, primary = rex.claimed) { finished() }
+                Action(if (rex.claimed) "Done" else "Skip for now", !busy, primary = rex.claimed, modifier = Modifier.focusRequester(next)) { finished() }
             }
         }
     }
