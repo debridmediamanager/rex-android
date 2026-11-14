@@ -73,7 +73,8 @@ off from your device and reach only the sites they name and the addresses you ty
 trust. How to write one: [rex-addons](https://github.com/debridmediamanager/rex-addons).
 
 The GitHub release starts with rex-addons' own repository added. The Play Store build starts
-with no repository and only the bundled Internet Archive addon.
+with no repository and only the bundled Internet Archive addon. The Stremio, YouTube and Spotify
+addons are in [rex-community-addons](https://github.com/debridmediamanager/rex-community-addons), which no build adds: add it by its link.
 
 **Logs** shows what rex and the addons said lately, with tokens, keys and passwords hidden.
 

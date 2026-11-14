@@ -64,6 +64,8 @@ Nothing here has been done; no Play Console app exists yet and nothing is upload
 - **Third-party code (addons):** addons are JavaScript the app downloads from repositories the
   person adds and runs in a sandbox that reaches only the sites the addon names. Play allows
   interpreted code that cannot reach Android APIs; say so if review asks. The Play build adds no
-  repository by itself; the GitHub build adds rex-addons' own.
+  repository by itself; the GitHub build adds rex-addons' own, which holds only Internet Archive.
+  The Stremio, YouTube and Spotify addons are in rex-community-addons, which no build adds; keep
+  that repository out of the store listing and the pages it links to.
 - **Battery:** the app does not request the battery exemption permission; it opens the system
   list and tells the person what to pick.
