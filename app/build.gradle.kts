@@ -63,7 +63,14 @@ android {
     // The native programs run from nativeLibraryDir (Android refuses to execute anything in an
     // app's writable storage), so the installer must extract them: legacy packaging keeps
     // extractNativeLibs on, in the APKs and in the splits Play builds from the AAB.
-    packaging { jniLibs { useLegacyPackaging = true; keepDebugSymbols += setOf("**/librex.so", "**/librexaddons.so", "**/libffprobe.so", "**/libffmpeg.so") } }
+    // Compose's androidx.graphics:graphics-path ships an x86 library too; alone in the AAB it would
+    // offer the app to 32-bit x86 devices, which rex's programs aren't built for. (ndk.abiFilters
+    // can't say it: AGP refuses them beside the ABI splits.)
+    packaging { jniLibs {
+        useLegacyPackaging = true
+        keepDebugSymbols += setOf("**/librex.so", "**/librexaddons.so", "**/libffprobe.so", "**/libffmpeg.so")
+        excludes += "lib/x86/**"
+    } }
     buildFeatures { compose = true; buildConfig = true }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
     kotlinOptions { jvmTarget = "17" }

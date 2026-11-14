@@ -54,6 +54,18 @@ check_programs() {
         { echo "$archive does not carry the bundled addon" >&2; exit 1; }
 }
 
+# check_abis <archive> <prefix> <abi>...: lib folders for exactly these ABIs, each with every program. A
+# folder for another ABI offers the app to devices rex can't run on: 0.3.1's AAB had an x86 one holding
+# only Compose's graphics library.
+check_abis() {
+    local archive=$1 prefix=$2 abi; shift 2
+    unzip -Z1 "$archive" | awk -v lib="${prefix}lib/" 'index($0, lib) == 1 { split(substr($0, length(lib) + 1), part, "/"); print part[1] }' |
+        sort -u | paste -sd' ' - > "$scratch/abis"
+    test "$(cat "$scratch/abis")" = "$(printf '%s\n' "$@" | sort | paste -sd' ' -)" ||
+        { echo "$archive holds the ABIs $(cat "$scratch/abis"), not $*" >&2; exit 1; }
+    for abi; do check_programs "$archive" "$prefix" "$abi"; done
+}
+
 # check_store_rules <archive>: nothing of the Spotify pairing that host 0.9 dropped, anywhere in it.
 check_store_rules() {
     rm -rf "$scratch/unpacked" && mkdir "$scratch/unpacked"
@@ -85,21 +97,18 @@ check_apk() {
 for abi in arm64-v8a armeabi-v7a x86_64; do
     apk="$apks/app-github-$abi-release.apk"
     check_apk "$apk"
-    check_programs "$apk" "" "$abi"
+    check_abis "$apk" "" "$abi"
     cp "$apk" "artifacts/rex-android-$version-$abi.apk"
 done
 
 jarsigner -verify "$bundle" > "$scratch/jarsigner"
 grep -q 'jar verified' "$scratch/jarsigner"
-for abi in arm64-v8a armeabi-v7a x86_64; do check_programs "$bundle" "base/" "$abi"; done
+check_abis "$bundle" "base/" arm64-v8a armeabi-v7a x86_64
 check_store_rules "$bundle"
 cp "$bundle" "artifacts/rex-android-$version-play.aab"
 
 # Amazon: the play flavor (no repository added) as one APK with both ARM ABIs and nothing else.
 check_apk "$amazon"
-for abi in arm64-v8a armeabi-v7a; do check_programs "$amazon" "" "$abi"; done
-unzip -Z1 "$amazon" | awk -F/ '$1 == "lib" { print $2 }' | sort -u | paste -sd' ' - > "$scratch/abis"
-test "$(cat "$scratch/abis")" = "arm64-v8a armeabi-v7a" ||
-    { echo "$amazon holds the ABIs $(cat "$scratch/abis"), not arm64-v8a and armeabi-v7a" >&2; exit 1; }
+check_abis "$amazon" "" arm64-v8a armeabi-v7a
 cp "$amazon" "artifacts/rex-android-$version-amazon.apk"
 echo "Verified the signed GitHub APKs, Play AAB and Amazon APK for $version"
