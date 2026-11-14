@@ -61,6 +61,8 @@ jobs:
           echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.jks"
           export REX_ANDROID_KEYSTORE="$RUNNER_TEMP/upload.jks"
           ./gradlew --no-daemon :app:lintGithubRelease :app:lintPlayRelease :app:assembleGithubRelease :app:bundlePlayRelease
+          # The Amazon Appstore takes an APK, not an AAB: the play flavor as one ARM APK.
+          ./gradlew --no-daemon -Pamazon :app:assemblePlayRelease
           ./verify-release.sh
           rm "$RUNNER_TEMP/upload.jks"
       - name: Draft release
@@ -70,7 +72,7 @@ jobs:
           gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1 ||
             gh release create "$GITHUB_REF_NAME" --draft --title "rex for Android $REX_ANDROID_VERSION" --generate-notes
           # Unversioned copies keep releases/latest/download/rex-android-<abi>.apk a stable download link.
-          for apk in artifacts/rex-android-"$REX_ANDROID_VERSION"-*.apk; do
-            cp "$apk" "artifacts/rex-android-${apk#artifacts/rex-android-"$REX_ANDROID_VERSION"-}"
+          for abi in arm64-v8a armeabi-v7a x86_64; do
+            cp "artifacts/rex-android-$REX_ANDROID_VERSION-$abi.apk" "artifacts/rex-android-$abi.apk"
           done
           gh release upload "$GITHUB_REF_NAME" artifacts/* --clobber

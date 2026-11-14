@@ -47,10 +47,14 @@ android {
             signingConfig = signingConfigs.findByName("release")
         }
     }
+    // -Pamazon builds the play flavor as one APK for the Amazon Appstore, which takes no AAB:
+    // the two ARM ABIs Fire TV and Fire tablets use (Fire TV Sticks are 32-bit).
+    val amazon = providers.gradleProperty("amazon").isPresent
+    if (amazon) defaultConfig.ndk.abiFilters += listOf("arm64-v8a", "armeabi-v7a")
     // One APK per ABI for GitHub; the AAB carries all three and Play splits it.
     splits {
         abi {
-            isEnable = true
+            isEnable = !amazon
             reset()
             include("arm64-v8a", "armeabi-v7a", "x86_64")
             isUniversalApk = false

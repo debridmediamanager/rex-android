@@ -118,9 +118,10 @@ builds from the AAB alike. Licenses and sources: [NATIVE-LICENSES.md](NATIVE-LIC
 **Release.** Sign with the upload key through `REX_ANDROID_KEYSTORE`,
 `REX_ANDROID_KEYSTORE_PASSWORD`, `REX_ANDROID_KEY_PASSWORD` and `REX_ANDROID_KEY_ALIAS`
 (default `upload`), set `REX_ANDROID_VERSION` and `REX_ANDROID_VERSION_CODE`, then run
-`./gradlew :app:lintGithubRelease :app:lintPlayRelease :app:assembleGithubRelease :app:bundlePlayRelease`
-and `./verify-release.sh`, which checks the signatures, the programs and the licenses and copies
-the GitHub APKs and the Play AAB into `artifacts/`. Pushing a `vX.Y.Z` tag does all of that on GitHub and attaches the results and the
+`./gradlew :app:lintGithubRelease :app:lintPlayRelease :app:assembleGithubRelease :app:bundlePlayRelease`,
+then `./gradlew -Pamazon :app:assemblePlayRelease` (the Amazon Appstore takes no AAB: this is the `play`
+flavor as one APK with the two ARM ABIs), and `./verify-release.sh`, which checks the signatures, the
+programs and the licenses and copies the GitHub APKs, the Play AAB and the Amazon APK into `artifacts/`. Pushing a `vX.Y.Z` tag does all of that on GitHub and attaches the results and the
 native sources to a draft release. Play Store material is in [play/](play/).
 
 ## Device tests

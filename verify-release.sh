@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Checks the signed GitHub APKs and the Play AAB before they are published, and copies them into
-# artifacts/ under their release names. Run after build-natives.sh, build-ffmpeg.py and
-# :app:assembleGithubRelease :app:bundlePlayRelease, with REX_ANDROID_VERSION set.
+# Checks the signed GitHub APKs, the Play AAB and the Amazon APK before they are published, and
+# copies them into artifacts/ under their release names. Run after build-natives.sh, build-ffmpeg.py,
+# :app:assembleGithubRelease :app:bundlePlayRelease and -Pamazon :app:assemblePlayRelease, with
+# REX_ANDROID_VERSION set.
 set -euo pipefail
 cd "$(dirname "$0")"
 version=${REX_ANDROID_VERSION:?Set REX_ANDROID_VERSION to the release version}
@@ -12,6 +13,9 @@ case "$(uname -s)" in Darwin) host=darwin-x86_64 ;; *) host=linux-x86_64 ;; esac
 readelf="$ndk/toolchains/llvm/prebuilt/$host/bin/llvm-readelf"
 apks=app/build/outputs/apk/github/release
 bundle=app/build/outputs/bundle/playRelease/app-play-release.aab
+amazon=app/build/outputs/apk/play/release/app-play-release.apk
+# The upload key's certificate (~/.config/rex-android/upload.jks): every APK must carry it.
+upload_cert=39afc0a2daa2cee0648a5742caded942f0163cf256057aec0afab498ce0f6728
 programs="librex.so librexaddons.so libffmpeg.so libffprobe.so"
 scratch=$(mktemp -d)
 trap 'rm -rf "$scratch"' EXIT
@@ -50,18 +54,37 @@ check_programs() {
         { echo "$archive does not carry the bundled addon" >&2; exit 1; }
 }
 
-for abi in arm64-v8a armeabi-v7a x86_64; do
-    apk="$apks/app-github-$abi-release.apk"
-    "$build_tools/apksigner" verify "$apk"
+# check_store_rules <archive>: nothing of the Spotify pairing that host 0.9 dropped, anywhere in it.
+check_store_rules() {
+    rm -rf "$scratch/unpacked" && mkdir "$scratch/unpacked"
+    unzip -q "$1" -d "$scratch/unpacked"
+    if grep -rlaiE 'spotify|librespot' "$scratch/unpacked" > "$scratch/hits"; then
+        echo "$1 mentions Spotify or librespot in:" >&2; cat "$scratch/hits" >&2; exit 1
+    fi
+}
+
+# check_apk <apk>: signed with the upload key, 16 KB aligned, release manifest that extracts the programs.
+check_apk() {
+    local apk=$1
+    "$build_tools/apksigner" verify --print-certs "$apk" > "$scratch/certs"
+    grep -qx "Signer #1 certificate SHA-256 digest: $upload_cert" "$scratch/certs" ||
+        { echo "$apk is not signed with the upload key" >&2; cat "$scratch/certs" >&2; exit 1; }
     "$build_tools/zipalign" -c -P 16 4 "$apk"
     "$build_tools/aapt" dump badging "$apk" > "$scratch/manifest"
     grep -qF "package: name='com.debridmediamanager.rex'" "$scratch/manifest"
     grep -qF "versionName='$version'" "$scratch/manifest"
     grep -qF 'leanback-launchable-activity:' "$scratch/manifest"
     if grep -q 'application-debuggable' "$scratch/manifest"; then echo "Refusing a debuggable APK" >&2; exit 1; fi
+    if grep -qi 'wifi' "$scratch/manifest"; then echo "$apk asks for a Wi-Fi permission" >&2; exit 1; fi
     # The programs run from nativeLibraryDir, which only an extracting install fills.
     "$build_tools/aapt" dump xmltree "$apk" AndroidManifest.xml > "$scratch/xmltree"
     grep -q 'extractNativeLibs.*0xffffffff' "$scratch/xmltree"
+    check_store_rules "$apk"
+}
+
+for abi in arm64-v8a armeabi-v7a x86_64; do
+    apk="$apks/app-github-$abi-release.apk"
+    check_apk "$apk"
     check_programs "$apk" "" "$abi"
     cp "$apk" "artifacts/rex-android-$version-$abi.apk"
 done
@@ -69,5 +92,14 @@ done
 jarsigner -verify "$bundle" > "$scratch/jarsigner"
 grep -q 'jar verified' "$scratch/jarsigner"
 for abi in arm64-v8a armeabi-v7a x86_64; do check_programs "$bundle" "base/" "$abi"; done
+check_store_rules "$bundle"
 cp "$bundle" "artifacts/rex-android-$version-play.aab"
-echo "Verified the signed GitHub APKs and Play AAB for $version"
+
+# Amazon: the play flavor (no repository added) as one APK with both ARM ABIs and nothing else.
+check_apk "$amazon"
+for abi in arm64-v8a armeabi-v7a; do check_programs "$amazon" "" "$abi"; done
+unzip -Z1 "$amazon" | awk -F/ '$1 == "lib" { print $2 }' | sort -u | paste -sd' ' - > "$scratch/abis"
+test "$(cat "$scratch/abis")" = "arm64-v8a armeabi-v7a" ||
+    { echo "$amazon holds the ABIs $(cat "$scratch/abis"), not arm64-v8a and armeabi-v7a" >&2; exit 1; }
+cp "$amazon" "artifacts/rex-android-$version-amazon.apk"
+echo "Verified the signed GitHub APKs, Play AAB and Amazon APK for $version"
