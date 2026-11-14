@@ -13,7 +13,7 @@ Android 8.0 or newer. Pick one way:
 | Google Play | Coming soon |
 | Amazon Appstore | Coming soon |
 | Obtainium | [Add rex to Obtainium](https://rex.debridmediamanager.com/obtainium). It installs the APK for your device's processor from Releases and keeps rex updated |
-| Downloader (Fire TV, TV boxes) | Type `rex.debridmediamanager.com/tv` in Downloader's address box. It gets the `armeabi-v7a` APK. A Downloader code is coming |
+| Downloader (Fire TV, TV boxes) | Type the code `6291659` (or `rex.debridmediamanager.com/tv`) in Downloader's address box. It gets the `armeabi-v7a` APK |
 | [Releases](https://github.com/debridmediamanager/rex-android/releases/latest) | One APK fits phones and TVs. Pick the one for your device's processor: `arm64-v8a` for most phones and TV boxes, `armeabi-v7a` for Fire TV and older 32-bit boxes, `x86_64` for emulators. If Android says the app isn't compatible, take the other ARM one. Install a newer one over the old one to update |
 
 The ways don't mix. Google Play, the Amazon Appstore and the APKs on Releases (which Obtainium and
