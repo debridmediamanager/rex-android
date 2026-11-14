@@ -30,23 +30,19 @@ class RexService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val commands = Channel<Pair<String?, Int>>(Channel.UNLIMITED)
     private var job: Job? = null
+    private var updates: Job? = null
 
     override fun onCreate() {
         super.onCreate()
         getSystemService(NotificationManager::class.java).createNotificationChannel(
             NotificationChannel(CHANNEL, "Media server", NotificationManager.IMPORTANCE_LOW))
-        val notification = notification("Starting")
-        if (Build.VERSION.SDK_INT >= 34) startForeground(1, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
-        else startForeground(1, notification)
-        scope.launch {
-            Status.rex.collect { state ->
-                getSystemService(NotificationManager::class.java).notify(1, notification(listOf(state.phase, state.detail).filter(String::isNotBlank).joinToString(" · ")))
-            }
-        }
+        foreground()
         scope.launch {
             for ((action, startId) in commands) {
                 when (action) {
-                    STOP -> { runtime.wanted = false; halt(); stopSelf(startId) }
+                    // The updates end first: a state posted after the service ended would leave a
+                    // "Stopped" notification behind that can't be swiped away.
+                    STOP -> { runtime.wanted = false; updates?.cancelAndJoin(); halt(); stopForeground(STOP_FOREGROUND_REMOVE); stopSelf(startId) }
                     RESTART -> { halt(); begin() }
                     else -> begin()
                 }
@@ -60,8 +56,23 @@ class RexService : Service() {
         return START_STICKY
     }
 
+    /** Runs in the foreground, with a notification that shows rex's state. */
+    private fun foreground() {
+        val notification = notification("Starting")
+        if (Build.VERSION.SDK_INT >= 34) startForeground(1, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+        else startForeground(1, notification)
+        if (updates?.isActive == true) return
+        updates = scope.launch {
+            Status.rex.collect { state ->
+                getSystemService(NotificationManager::class.java).notify(1, notification(listOf(state.phase, state.detail).filter(String::isNotBlank).joinToString(" · ")))
+            }
+        }
+    }
+
     private fun begin() {
         if (job?.isActive == true) return
+        // A Stop queued before this start took the service out of the foreground.
+        if (updates?.isActive != true) foreground()
         runtime.wanted = true
         // A rex left behind when Android killed the app holds its database and its port.
         stopLeftovers()
