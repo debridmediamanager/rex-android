@@ -44,4 +44,22 @@ class TvFocusInstrumentedTest {
             runtime.port = port; runtime.setupDone = setup; runtime.wanted = wanted
         }
     }
+
+    // Back from an addon's settings put focus on Status in the navigation, not on the addon (emulator, 0.3.1, 2026-11-14).
+    @Test fun backFromAnAddonsPageReturnsFocusToTheButtonThatOpenedIt() {
+        val before = Status.addons.value
+        try {
+            Status.addons.value = AddonsState(host = HostStatus(addons = listOf(Addon("one", "First addon"), Addon("two", "Second addon"))))
+            compose.setContent { CompositionLocalProvider(LocalTelevision provides true) { AddonsScreen({}, busy = false) } }
+            for (page in listOf("Settings", "Log")) {
+                // The second addon's button: the first focusable of the page would pass by luck.
+                compose.onAllNodes(hasText(page))[1].requestFocus().performKeyInput { pressKey(Key.DirectionCenter) }
+                compose.onNodeWithText("Back").assertIsFocused()
+                compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+                compose.onAllNodes(hasText(page))[1].assertIsFocused()
+            }
+        } finally {
+            Status.addons.value = before
+        }
+    }
 }

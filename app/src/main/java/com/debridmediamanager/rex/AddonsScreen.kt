@@ -128,10 +128,15 @@ private class PendingUpdate(val name: String, val warning: String, val update: (
     }
     // Runs a repository call, then lists the repositories again.
     val repoCall = { done: String, call: () -> Unit -> work.addonCall(done) { call(); repos = client.repos() } }
+    // The button that opened a page over this one gets focus back when it closes; without it a remote lands on Status.
+    var opener by remember { mutableStateOf<String?>(null) }
+    val back = remember { FocusRequester() }
+    fun opens(key: String) = if (key == opener) Modifier.focusRequester(back) else Modifier
     signingIn?.let { id -> SignInScreen(id, work, busy) { openSignIn.value = null }; return }
     editing?.let { id -> AddonSettingsForm(id, work, busy) { editing = null }; return }
     reading?.let { id -> AddonLogScreen(id) { reading = null }; return }
     browsing?.let { repo -> RepoScreen(repo, work, busy) { browsing = null }; return }
+    LaunchedEffect(Unit) { if (opener != null) runCatching { back.requestFocus() } }
     val now = clock()
     ScrollPage {
         Title("Addons", "Addons bring things to watch into rex.")
@@ -153,7 +158,8 @@ private class PendingUpdate(val name: String, val warning: String, val update: (
                     }
                     Buttons {
                         account.signIn?.let { label ->
-                            Action(label, !busy && addon.enabled, primary = true) {
+                            Action(label, !busy && addon.enabled, primary = true, modifier = opens("sign-in ${addon.id}")) {
+                                opener = "sign-in ${addon.id}"
                                 if (account.waiting) openSignIn.value = addon.id
                                 else work { showFresh(client.signIn(addon.id)); openSignIn.value = addon.id; "" }
                             }
@@ -168,8 +174,8 @@ private class PendingUpdate(val name: String, val warning: String, val update: (
                         Action(if (account.force) "Sync anyway" else "Sync now", !busy && addon.enabled && addon.state != "syncing" && account.canSync && need == null) {
                             work.addonCall("Syncing ${addon.name}.") { client.sync(addon.id, force = account.force) }
                         }
-                        Action("Settings", !busy) { editing = addon.id }
-                        Action("Log") { reading = addon.id }
+                        Action("Settings", !busy, modifier = opens("settings ${addon.id}")) { opener = "settings ${addon.id}"; editing = addon.id }
+                        Action("Log", modifier = opens("log ${addon.id}")) { opener = "log ${addon.id}"; reading = addon.id }
                         if (account.signOut) Action("Sign out", !busy) { signingOut = addon }
                         Action("Remove", !busy) { removing = addon }
                     }
@@ -186,7 +192,7 @@ private class PendingUpdate(val name: String, val warning: String, val update: (
                         (repo.lastFetch?.let { " · checked ${ago(it)}" } ?: ""), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     repo.error?.takeIf { it.isNotBlank() }?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                     Buttons {
-                        Action("Addons", !busy, primary = true) { browsing = repo }
+                        Action("Addons", !busy, primary = true, modifier = opens("repo ${repo.id}")) { opener = "repo ${repo.id}"; browsing = repo }
                         Action("Refresh", !busy) { repoCall("Checked ${repo.name.ifBlank { repo.id }} for updates.") { client.refreshRepo(repo.id) } }
                         Action("Remove", !busy) { dropping = repo }
                     }
