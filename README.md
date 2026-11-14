@@ -4,9 +4,22 @@
 apps. The Plex apps on your devices find it like any Plex server and play from it. What it
 plays comes from addons; the app starts with the Internet Archive's public domain films.
 
-[Download it from Releases](https://github.com/debridmediamanager/rex-android/releases/latest). Android 8.0 or newer. One APK fits phones and TVs; pick the one for your device's processor:
-`arm64-v8a` for most phones and TV boxes, `armeabi-v7a` for older or cheaper 32-bit boxes
-(Fire TV Sticks among them), `x86_64` for emulators. Google Play picks for you.
+## Install
+
+Android 8.0 or newer. Pick one way:
+
+| Way | How |
+|---|---|
+| Google Play | Coming soon |
+| Amazon Appstore | Coming soon |
+| Obtainium | [Add rex to Obtainium](https://rex.debridmediamanager.com/obtainium). It installs the APK for your device's processor from Releases and keeps rex updated |
+| Downloader (Fire TV, TV boxes) | Type `rex.debridmediamanager.com/tv` in Downloader's address box. It gets the `armeabi-v7a` APK. A Downloader code is coming |
+| [Releases](https://github.com/debridmediamanager/rex-android/releases/latest) | One APK fits phones and TVs. Pick the one for your device's processor: `arm64-v8a` for most phones and TV boxes, `armeabi-v7a` for Fire TV and older 32-bit boxes, `x86_64` for emulators. If Android says the app isn't compatible, take the other ARM one. Install a newer one over the old one to update |
+
+The ways don't mix. Google Play, the Amazon Appstore and the APKs on Releases (which Obtainium and
+Downloader install too) are signed differently, so none updates another. To switch, uninstall rex and
+set it up again: Plex sign-in and addons. The APKs on Releases start with rex-addons' own repository
+added; the store builds start with no repository, only the bundled Internet Archive addon.
 
 <p>
   <img src="docs/screenshots/phone-status.png" width="32%" alt="Status: rex running and signed in to Plex, with two addons synced">
@@ -71,9 +84,7 @@ removing one keeps the addons you installed from it, without further updates. Ad
 off from your device and reach only the sites they name and the addresses you type; still, install only from people you
 trust. How to write one: [rex-addons](https://github.com/debridmediamanager/rex-addons).
 
-The GitHub release starts with rex-addons' own repository added. The Play Store build starts
-with no repository and only the bundled Internet Archive addon. The Stremio, YouTube and Spotify
-addons are in [rex-community-addons](https://github.com/debridmediamanager/rex-community-addons), which no build adds: add it by its link.
+The Stremio, YouTube and Spotify addons are in [rex-community-addons](https://github.com/debridmediamanager/rex-community-addons), which no build adds: add it by its link.
 
 **Logs** shows what rex and the addons said lately, with tokens, keys and passwords hidden.
 
