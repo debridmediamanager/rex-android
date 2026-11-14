@@ -149,6 +149,6 @@ app's environment, and encode on the device's MediaCodec. To check a Play-style 
 device APKs from the AAB with bundletool (`build-apks --connected-device`, then `install-apks`)
 and look for the four programs in the app's `lib/<abi>/` folder.
 
-Amlogic's encoder (Fire TV Stick 4K Max) hangs whenever FFmpeg's muxer wants global headers
+Amlogic's encoder (Fire TV Cube 3rd gen, AFTGAZL) hangs whenever FFmpeg's muxer wants global headers
 (MP4, DASH, Matroska); the device test writes MPEG-TS, which works there. Conversions to those
 formats on such boxes are not proven.
