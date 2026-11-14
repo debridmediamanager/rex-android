@@ -46,22 +46,25 @@ def word(height):
 
 
 PHONE = [  # capture, headline, subline, last capture row shown (the tab bar starts at 2185)
-    ("phone-status", "Your phone, now a media server", "Pick it by name in any of the Plex apps.", 2100),
+    ("phone-status", "Your phone, now a media server", "Pick it by name in any of the Plex apps.", 1960),
     ("phone-plex-film", "Watch it in the Plex apps", "Public domain classics come built in.", 2180),
     ("phone-plex-playing", "Silent classics to film noir", "Streamed from the Internet Archive.", None),
     ("phone-addons", "Addons bring in what to watch", "Turn them on or off, or sync them now.", 2180),
-    ("phone-addon-settings", "Your own server, too", "Type its address and pick a quality.", 1440),
-    ("phone-addon-log", "See what each addon did", "Each one keeps its own log.", 2085),
+    ("phone-repo-addons", "Add addons by their link", "See which websites each one can reach first.", 1280),
+    ("phone-addon-settings", "Settings for each addon", "Pick how many films it brings in.", 900),
+    ("phone-addon-log", "See what each addon did", "Each one keeps its own log.", 1150),
     ("phone-setup", "Set up in two steps", "Name it, start it, sign in once.", 2180),
 ]
 TV = [
     ("tv-plex-playing", "Watch on the big screen", "rex runs on this TV. The Plex app plays from it."),
-    ("tv-status", "Your TV, now a media server", "It keeps running in the background."),
     ("tv-plex-library", "Classic films in your library", "Public domain films from the Internet Archive."),
+    ("tv-status", "Your TV, now a media server", "It keeps running in the background."),
     ("tv-signin-code", "Sign in with a code", "Enter it on your phone. No typing on the remote."),
-    ("tv-addon-settings", "Made for the remote", "Every screen and setting works with the D-pad."),
     ("tv-addons", "Addons bring in what to watch", "Turn them on or off, or sync them now."),
+    ("tv-addon-settings", "Made for the remote", "Every screen and setting works with the D-pad."),
 ]
+# Unaltered TV screenshots (Play's TV review wants at least one), only without the alpha channel.
+UNALTERED = ("tv-status", "tv-addons", "tv-addon-settings", "tv-plex-playing")
 
 CSS = f"""
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&display=block');
@@ -143,14 +146,43 @@ def feature_body():
             f'<img src="{tv}" style="width:719px"></div>')
 
 
-def icon_body():
+def icon_body(side=512):
     # Same proportion as the launcher icon: the mark spans 40% of the square.
-    return f'<div style="position:absolute;inset:0;display:grid;place-items:center;background:{BG}">{mark(216)}</div>'
+    # Sized in pixels: headless Chrome's viewport has a minimum width wider than a small icon.
+    return (f'<div style="position:absolute;left:0;top:0;width:{side}px;height:{side}px;display:grid;place-items:center;'
+            f'background:{BG}">{mark(side * 27 // 64)}</div>')
 
 
 def banner_body():
     return (f'<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:56px;'
             f'background:{BG}">{mark(300)}{word(176)}</div>')
+
+
+def firetv_icon_body():
+    # Amazon's Fire TV app icon: mark and wordmark inside the centred 882 x 448 safe area.
+    return (f'<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:44px;'
+            f'background:{BG}">{mark(220)}{word(130)}</div>')
+
+
+def firetv_background(out):
+    """Amazon's Fire TV background (no logo or text): the Internet Archive films from the Plex
+    library row, blurred, fading into the app's background on the left where Fire TV draws its text."""
+    from PIL import ImageFilter
+    row = Image.open(RAW / "tv-plex-library.png").convert("RGB")
+    # Poster tiles in the capture (x of each, 240 x 360 from y 568); the first is inset past its focus ring.
+    tiles = [row.crop((126, 572, 372, 934))] + [row.crop((x, 568, x + 240, 928)) for x in (399, 671, 943, 1215, 1487)]
+    bg = Image.new("RGB", (1920, 1080), BG)
+    tw, th, gap = 300, 450, 24
+    for r in range(3):
+        for c in range(5):
+            tile = tiles[(r * 5 + c + r) % len(tiles)].resize((tw, th), Image.LANCZOS)
+            bg.paste(tile, (680 - (r % 2) * tw // 2 + c * (tw + gap), -180 + r * (th + gap)))
+    bg = bg.filter(ImageFilter.GaussianBlur(3))
+    shade = Image.new("L", bg.size)
+    draw = ImageDraw.Draw(shade)
+    for x in range(1920):  # solid at the left, posters at 35 % opacity on the right
+        draw.line([(x, 0), (x, 1079)], fill=255 if x < 560 else max(166, int(255 - (x - 560) / 600 * 89)))
+    Image.composite(Image.new("RGB", bg.size, BG), bg, shade).save(out, optimize=True)
 
 
 def render(body, w, h, out):
@@ -176,10 +208,16 @@ def main():
     render(feature_body(), 1024, 500, HERE / "feature-graphic.png")
     render(icon_body(), 512, 512, HERE / "icon-512.png")
     render(banner_body(), 1280, 720, HERE / "tv-banner.png")
-    # Unaltered TV screenshots (Play's TV review wants at least one), only without the alpha channel.
     (HERE / "tv" / "unaltered").mkdir(parents=True, exist_ok=True)
-    for name in ("tv-plex-playing", "tv-status", "tv-addons", "tv-addon-settings"):
+    for name in UNALTERED:
         Image.open(RAW / f"{name}.png").convert("RGB").save(HERE / "tv" / "unaltered" / f"{name}.png", optimize=True)
+    # Amazon Appstore: its own icon sizes, Fire TV icon and background; the screenshots and the
+    # promotional image are the Play ones (see ../amazon.md).
+    amazon = HERE / "amazon"
+    render(icon_body(), 512, 512, amazon / "icon-512.png")
+    render(icon_body(114), 114, 114, amazon / "icon-114.png")
+    render(firetv_icon_body(), 1280, 720, amazon / "firetv-app-icon-1280x720.png")
+    firetv_background(amazon / "firetv-background-1920x1080.png")
     for out in sorted(HERE.rglob("*.png")):
         if out.parent.name != "raw":
             with Image.open(out) as im:
