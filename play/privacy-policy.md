@@ -1,6 +1,6 @@
-# rex for Android: privacy policy (draft)
+# rex for Android: privacy policy
 
-*Last updated: (date of publishing)*
+*Last updated: 14 November 2026. Published at <https://notes.debridmediamanager.com/rex/android-privacy/>.*
 
 rex for Android runs a media server on your device. It has no account with us, no ads and no
 analytics, and it does not send us your library, your viewing or anything about you, except
@@ -41,4 +41,4 @@ The app is not directed at children.
 
 ## Contact
 
-(support email)
+support@debridmediamanager.com

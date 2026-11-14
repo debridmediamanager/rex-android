@@ -1,6 +1,7 @@
 # Play Console: what Ben does
 
-Nothing here has been done; no Play Console app exists yet and nothing is uploaded.
+Done so far: the app is released on GitHub, the graphics are made and the privacy policy is
+published. No Play Console app exists yet and nothing is uploaded there.
 
 ## Before the first upload
 
@@ -18,10 +19,12 @@ Nothing here has been done; no Play Console app exists yet and nothing is upload
    debridmediamanager.com once signed in (see privacy-policy.md). Keep it (Plex apps reach rex over
    HTTPS away from home) or ship the app with `REX_DIRECT_URL=off`. The privacy policy and the
    data safety answers say it is on.
-3. Publish `play/privacy-policy.md` at a public URL (notes.debridmediamanager.com fits) with a
-   support email filled in.
-4. Graphics are made: `play/graphics/`, listed with Play's rules in `listing.md`. Decide on the
-   example Home Server addon they show (publish it in rex-addons, or drop those shots).
+3. Done: the privacy policy is at <https://notes.debridmediamanager.com/rex/android-privacy/>
+   (notes `rex/android-privacy.md`, a copy of `play/privacy-policy.md`: change both together).
+   Its contact is support@debridmediamanager.com.
+4. Graphics are made: `play/graphics/`, listed with Play's rules in `listing.md`. Upload the
+   shots `listing.md` names: the ones showing the example Home Server addon stay out, because no
+   repository offers it.
 
 ## Create the app
 

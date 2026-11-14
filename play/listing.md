@@ -28,7 +28,7 @@
 > rex is not made by or affiliated with Plex, Inc. A free Plex account is enough.
 
 **Category:** Video Players & Editors. **Tags:** media server, home media, streaming.
-**Contact email:** a support address Ben chooses. **Website:** `https://notes.debridmediamanager.com/rex/`.
+**Contact email:** support@debridmediamanager.com. **Website:** `https://notes.debridmediamanager.com/rex/`.
 
 ## Graphics
 
@@ -47,6 +47,6 @@ account, no names shown). Sizes checked against Google's help pages that day.
 
 Phone order: Status, a film in the Plex app, playback, Addons, an addon's settings, its log, setup.
 Phone shots 04 to 06, TV shot 05 (and the README's addon shots) show **Home Server**, an example addon written for
-them (source in `graphics/home-server-addon/`) that no repository offers yet: publish it in
-rex-addons before using those, or leave them out. Graphics avoid Plex's logo and colours;
+them (source in `graphics/home-server-addon/`) that no repository offers: leave those out.
+**Upload** phone `01`, `02`, `03`, `07`; for TV, `tv/unaltered/tv-status.png` first, then `tv/01` to `04` and `06`. Graphics avoid Plex's logo and colours;
 Plex's own player and library appear only inside the captures.
