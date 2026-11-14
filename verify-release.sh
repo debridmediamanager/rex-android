@@ -41,7 +41,7 @@ check_programs() {
                 awk '/LOAD/ { count++; if ($NF != "0x4000" && $NF != "0x10000") bad=1 } END { if (!count || bad) exit 1 }'
         fi
     done
-    for license in FFmpeg-LGPL-3.0.txt GPL-3.0.txt OpenSSL-Apache-2.0.txt rex-LICENSE.txt rex-addons-LICENSE.txt; do
+    for license in FFmpeg-LGPL-3.0.txt GPL-3.0.txt Libraries.txt OpenSSL-Apache-2.0.txt rex-LICENSE.txt rex-addons-LICENSE.txt; do
         unzip -p "$archive" "${prefix}assets/native-licenses/$license" | cmp - "app/src/main/assets/native-licenses/$license"
     done
     # Listed to a file first: grep -q stops reading early, and pipefail counts unzip's SIGPIPE.

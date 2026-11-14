@@ -20,7 +20,8 @@ FFmpeg's LGPL 3.0 terms incorporate the accompanying GPL 3.0 text.
 
 Every release includes `rex-android-<version>-native-source.zip` with the exact upstream
 source archives, their hashes, the complete license texts and the build recipe. The app
-carries the same license texts under Settings, Licenses. This is free software supplied
+carries the same license texts under Settings, Licenses, with a list of the Rust libraries
+rex and the addon host are built with (`Libraries.txt`, written by `build-natives.sh`). This is free software supplied
 without warranty; the license texts describe your rights to modify and redistribute it.
 
 To rebuild FFmpeg, extract the source ZIP and run `python3 build-ffmpeg.py` with Python

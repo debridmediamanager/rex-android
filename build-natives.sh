@@ -48,6 +48,12 @@ cargo_android() {
     done
 }
 
+# rust_libraries <manifest>: every Rust library a program links, with its license and where its text is.
+rust_libraries() {
+    cargo metadata --locked --format-version 1 --filter-platform aarch64-linux-android --manifest-path "$1" |
+        jq -r '.packages[] | select(.source != null) | "\(.name) \(.version): \(.license // "see its page"), \(.repository // .homepage // "crates.io/crates/\(.name)")"'
+}
+
 rex=$(checkout rex rex.ref)
 cargo_android "$rex/rust/Cargo.toml" rex librex.so
 mkdir -p app/src/main/assets/native-licenses
@@ -65,3 +71,12 @@ if [ -n "$(tr -d '[:space:]' < rex-addons.ref)" ]; then
 else
     echo "rex-addons.ref is empty: building without addons" >&2
 fi
+
+# Settings, Licenses shows it. A blank line every 20 entries: a remote scrolls that page one paragraph at a time.
+{
+    echo 'rex and the addon host are built with these Rust libraries (the addon host with QuickJS, in rquickjs-sys). Each is under the license named beside it; its text is at the address that follows.'
+    echo
+    { rust_libraries "$rex/rust/Cargo.toml"; [ -z "${addons:-}" ] || rust_libraries "$addons/Cargo.toml"; } | sort -u | awk '{ print } NR % 20 == 0 { print "" }'
+    echo
+    echo 'The app itself uses AndroidX, Jetpack Compose, OkHttp, Okio and the kotlinx libraries, all under the Apache License 2.0 (its text is on this page, under OpenSSL-Apache-2.0.txt).'
+} > app/src/main/assets/native-licenses/Libraries.txt
