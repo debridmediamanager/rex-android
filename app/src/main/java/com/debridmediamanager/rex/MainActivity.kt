@@ -126,7 +126,7 @@ class MainActivity : ComponentActivity() {
             Text(rex.phase.uppercase(), color = MaterialTheme.colorScheme.primary, letterSpacing = 3.sp)
             if (rex.detail.isNotBlank()) Text(rex.detail, fontSize = 20.sp)
             if (rex.reachable) {
-                Text("Name: ${runtime.serverName}")
+                Text("Name: ${rex.name.ifBlank { runtime.serverName }}")
                 runtime.lanAddresses().forEach { Text("At home: http://$it:${runtime.port}", color = MaterialTheme.colorScheme.secondary) }
             }
             Buttons {
@@ -199,7 +199,7 @@ fun ago(seconds: Long): String =
                 ""
             } }
         } else {
-            Text("Signed in. rex shows up in the Plex apps as ${runtime.serverName}.")
+            Text("Signed in. rex shows up in the Plex apps as ${rex.name.ifBlank { runtime.serverName }}.")
             val plex = remember { context.packageManager.getLaunchIntentForPackage("com.plexapp.android") }
             if (plex != null) Action("Open Plex", primary = true) { context.startActivity(plex) }
         }

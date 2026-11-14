@@ -20,6 +20,20 @@ fun rexClaimed(rexUrl: String): Boolean = Regex("""claimed="(\d)"""").find(rexId
 /** The version rex reports, as any Plex server does. Throws while rex is not up. */
 fun rexVersion(rexUrl: String): String? = Regex("""\bversion="([^"]+)"""").find(rexIdentity(rexUrl))?.groupValues?.get(1)
 
+/** The server token rex keeps once claimed, which only this app can read; null before that. */
+fun rexToken(rexDirectory: java.io.File): String? = runCatching {
+    Json.parseToJsonElement(java.io.File(rexDirectory, "claim_state.json").readText()).jsonObject["token"]?.jsonPrimitive?.contentOrNull
+}.getOrNull()
+
+/** The name rex goes by now: a Plex app's Friendly name setting changes it after the first start. */
+fun rexName(rexUrl: String, token: String?): String? {
+    if (token == null) return null
+    return http.newCall(Request.Builder().url("$rexUrl/").header("Accept", "application/json").header("X-Plex-Token", token).build()).execute().use {
+        if (!it.isSuccessful) throw IOException("rex answered ${it.code}")
+        Json.parseToJsonElement(it.body?.string().orEmpty()).jsonObject["MediaContainer"]?.jsonObject?.get("friendlyName")?.jsonPrimitive?.contentOrNull
+    }
+}
+
 private fun rexIdentity(rexUrl: String): String =
     http.newCall(Request.Builder().url("$rexUrl/identity").build()).execute().use {
         if (!it.isSuccessful) throw IOException("rex answered ${it.code}")

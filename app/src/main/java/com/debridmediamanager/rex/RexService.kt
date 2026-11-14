@@ -18,7 +18,7 @@ import kotlinx.coroutines.flow.*
 import java.io.File
 
 data class RexState(val phase: String = "Stopped", val detail: String = "", val running: Boolean = false,
-    val reachable: Boolean = false, val claimed: Boolean = false)
+    val reachable: Boolean = false, val claimed: Boolean = false, val name: String = "")
 data class AddonsState(val detail: String = "", val host: HostStatus? = null)
 
 object Status {
@@ -107,9 +107,12 @@ class RexService : Service() {
     private suspend fun pollRex() {
         while (true) {
             val claimed = runCatching { rexClaimed(runtime.rexUrl) }
+            // Renamed in a Plex app (Friendly name): the app and its addons follow rex.
+            if (claimed.getOrNull() == true) runCatching { rexName(runtime.rexUrl, rexToken(runtime.rexDirectory)) }.getOrNull()
+                ?.takeIf { it.isNotBlank() && it != runtime.serverName }?.let { runtime.serverName = it }
             Status.rex.value = claimed.fold(
                 { RexState("Running", if (it) "Ready for the Plex apps." else "Sign in to Plex to see it in the Plex apps.",
-                    running = true, reachable = true, claimed = it) },
+                    running = true, reachable = true, claimed = it, name = runtime.serverName) },
                 { RexState("Starting", "Waiting for rex to answer…", running = true) })
             delay(5_000)
         }
