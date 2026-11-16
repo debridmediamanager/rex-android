@@ -16,8 +16,12 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import java.io.File
 
+/** [refused]: plex.tv answers 401 to the claim's token, so rex is claimed but the Plex apps can't use it. */
 data class RexState(val phase: String = "Stopped", val detail: String = "", val running: Boolean = false,
-    val reachable: Boolean = false, val claimed: Boolean = false, val name: String = "")
+    val reachable: Boolean = false, val claimed: Boolean = false, val name: String = "", val refused: Boolean = false) {
+    val needsSignIn get() = reachable && (!claimed || refused)
+    val ready get() = claimed && !refused
+}
 data class AddonsState(val detail: String = "", val host: HostStatus? = null)
 
 object Status {
@@ -106,13 +110,11 @@ class RexService : Service() {
 
     private suspend fun pollRex() {
         while (true) {
-            val claimed = runCatching { rexClaimed(runtime.rexUrl) }
+            val state = runCatching { rexState(runtime.rexUrl, Status.rex.value.refused) }
             // Renamed in a Plex app (Friendly name): the app and its addons follow rex.
-            if (claimed.getOrNull() == true) runCatching { rexName(runtime.rexUrl, rexToken(runtime.rexDirectory)) }.getOrNull()
+            if (state.getOrNull()?.claimed == true) runCatching { rexName(runtime.rexUrl, rexToken(runtime.rexDirectory)) }.getOrNull()
                 ?.takeIf { it.isNotBlank() && it != runtime.serverName }?.let { runtime.serverName = it }
-            Status.rex.value = claimed.fold(
-                { RexState("Running", if (it) "Ready for the Plex apps." else "Sign in to Plex to see it in the Plex apps.",
-                    running = true, reachable = true, claimed = it, name = runtime.serverName) },
+            Status.rex.value = state.fold({ it.copy(name = runtime.serverName) },
                 { RexState("Starting", "Waiting for rex to answer…", running = true) })
             delay(5_000)
         }

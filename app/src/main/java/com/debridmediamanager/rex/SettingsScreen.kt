@@ -131,7 +131,7 @@ private fun supportBundle(context: Context): SupportBundle {
         "rex state" to listOf(rex.phase, rex.detail).filter(String::isNotBlank).joinToString(": "),
         "rex running" to yes(rex.running),
         "rex reachable" to yes(rex.reachable),
-        "Signed in to Plex" to yes(rex.claimed),
+        "Signed in to Plex" to if (rex.refused) "signed out by Plex" else yes(rex.claimed),
         "Addon host state" to (addons.host?.let { "running, rex ${if (it.rex.reachable) "reachable" else "not reachable"}" }
             ?: addons.detail.ifBlank { "not running" }),
         "Time zone" to java.time.ZonedDateTime.now().offset.id,

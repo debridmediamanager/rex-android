@@ -179,7 +179,7 @@ import kotlinx.coroutines.withContext
         } else {
             Title("Sign in to Plex.", "Then open any Plex app signed in to the same account.")
             if (!rex.reachable) Panel { Text(listOf(rex.phase, rex.detail).filter(String::isNotBlank).joinToString(" · ")) }
-            PlexPanel(work, busy)
+            PlexPanel()
             Buttons {
                 Action("Back", !busy) { step = 0 }
                 Action(if (rex.claimed) "Done" else "Skip for now", !busy, primary = rex.claimed, modifier = Modifier.focusRequester(next)) { finished() }

@@ -138,7 +138,7 @@ class MainActivity : ComponentActivity() {
                 Action("Restart", rex.running) { RexService.send(context, RexService.RESTART) }
             }
         }
-        PlexPanel(work, busy)
+        PlexPanel()
         Panel {
             Text("Addons", style = MaterialTheme.typography.titleLarge)
             val host = addons.host
@@ -177,30 +177,33 @@ fun ago(seconds: Long): String =
     if (System.currentTimeMillis() - seconds * 1000 < 60_000) "just now"
     else android.text.format.DateUtils.getRelativeTimeSpanString(seconds * 1000).toString()
 
-// The one-time Plex sign-in that claims rex, and the way into a Plex app once it is claimed.
-@Composable fun PlexPanel(work: Work, busy: Boolean) {
+// The Plex sign-in that claims rex (again, once plex.tv signed it out), and the way into a Plex app once it is
+// claimed. The sign-in runs on its own (PlexClaim), so it never holds the other buttons busy.
+@Composable fun PlexPanel() {
     val context = LocalContext.current
     val runtime = context.runtime
     val rex by Status.rex.collectAsStateWithLifecycle()
-    val code by PlexClaim.code.collectAsStateWithLifecycle()
-    val outcome by PlexClaim.outcome.collectAsStateWithLifecycle()
+    val signIn by PlexClaim.state.collectAsStateWithLifecycle()
     val television = LocalTelevision.current
+    fun browse(url: String) = runCatching {
+        context.applicationContext.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    }
     if (!rex.reachable) return
     Panel {
         Text("Plex", style = MaterialTheme.typography.titleLarge)
-        // A finished sign-in speaks for itself below; only a failed one needs saying.
-        if (outcome.isNotBlank() && !rex.claimed) Text(outcome, color = MaterialTheme.colorScheme.error)
-        if (code.isNotBlank()) Text("On any phone or computer, go to plex.tv/link and enter $code", fontSize = 22.sp)
-        if (!rex.claimed) {
-            Text("Sign in once with your Plex account. rex then shows up in every Plex app signed in to it.")
-            Action("Sign in to Plex", !busy && code.isBlank(), primary = true) { work {
-                val page = PlexClaim.begin(runtime)
-                // A TV has no browser worth using: the code on screen is the way in there.
-                if (!television) withContext(Dispatchers.Main) {
-                    runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(page)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
-                }
-                ""
-            } }
+        // A finished sign-in speaks for itself below; only one under way or failed needs saying.
+        if (signIn.message.isNotBlank() && !signIn.signedIn)
+            Text(signIn.message, color = if (signIn.waiting) Color.Unspecified else MaterialTheme.colorScheme.error)
+        if (signIn.code.isNotBlank()) {
+            Text("On any phone or computer, go to plex.tv/link and enter ${signIn.code}", fontSize = 22.sp)
+            if (!television) Action("Open plex.tv/link") { browse("https://plex.tv/link") }
+        }
+        if (rex.needsSignIn) Text(if (rex.refused) "Plex signed this server out. Sign in again."
+            else "Sign in once with your Plex account. rex then shows up in every Plex app signed in to it.")
+        // One button for both, so a remote's focus stays on it when Sign in and Cancel swap.
+        if (signIn.waiting || rex.needsSignIn) Action(if (signIn.waiting) "Cancel sign-in" else "Sign in to Plex", primary = !signIn.waiting) {
+            if (signIn.waiting) PlexClaim.cancel()
+            else PlexClaim.start(PlexSignIn(runtime), television) { withContext(Dispatchers.Main) { browse(it) } }
         } else {
             Text("Signed in. rex shows up in the Plex apps as ${rex.name.ifBlank { runtime.serverName }}.")
             val plex = remember { context.packageManager.getLaunchIntentForPackage("com.plexapp.android") }

@@ -53,8 +53,12 @@ There is another version of this app with [zurg](https://zurg.debridmediamanager
 
 1. Open rex, give it a name and press **Start rex**. If another Plex server already runs on
    this device, rex says its port is taken: use `32500`.
-2. **Sign in to Plex.** On a phone your browser opens; on a TV, enter the code shown at
-   plex.tv/link. A free Plex account is enough. You can skip this and sign in later from Status.
+2. **Sign in to Plex.** On a phone the Plex sign-in page opens; approve it there, or enter the
+   four-character code the app shows at plex.tv/link (**Open plex.tv/link**). A TV shows only the code.
+   The code stays on screen while you use the rest of the app, and **Cancel sign-in** drops it.
+   A free Plex account is enough. You can skip this and sign in later from Status. If Plex later signs
+   the server out (you removed it from your Plex account, or signed out of all devices), Status and the
+   notification say so: sign in again.
 3. Open any Plex app signed in to the same account and pick the server by its name.
 
 rex keeps running in the background with a notification you can stop it from. **Settings**
