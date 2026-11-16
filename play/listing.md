@@ -45,6 +45,16 @@ What it plays comes from addons. rex comes with one: the Internet Archive's publ
 rex is not made by or affiliated with Plex, Inc. A free Plex account is enough.
 ```
 
+**Release notes for 0.3.2** (Play's "What's new", 500 max; the Amazon Appstore and GitHub release use the same text):
+
+```text
+• Plex sign-in now works on phones: approve it on Plex's page, or enter the code at plex.tv/link.
+• Cancel a sign-in at any time; the rest of the app stays usable while it waits.
+• If Plex signs the server out (you removed it, or signed out of all devices), rex says so: sign in again.
+• The server shows up in the Plex apps reliably after you sign in.
+• On a TV, the remote stays on the sign-in button and returns to the button you came from.
+```
+
 **Release notes for 0.3.1** (Play's "What's new", 500 max):
 
 ```text
