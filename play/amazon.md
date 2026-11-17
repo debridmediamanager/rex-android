@@ -12,7 +12,7 @@ console's traps).
 |---|---|
 | Platform | Android |
 | App title | `rex: home media server` |
-| Category | Utilities (no subcategory fits a media server; if the list offers Photo & Video or Movies & TV, prefer that) |
+| Category | Photo & Video, app feature "Video Player". Amazon rejected Movies & TV on 2026-11-17 (Listing and Promotion Policy) and named this category |
 
 ## 2. App file
 
